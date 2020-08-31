@@ -1,0 +1,13 @@
+[package]
+name = "std-embedded-nal"
+version = "0.0.1"
+authors = ["chrysn <chrysn@fsfe.org>"]
+edition = "2018"
+
+description = "Implementation of the `embedded-nal` traits for large devices that support the standard library"
+categories = ["embedded", "hardware-support"]
+keywords = ["network"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+embedded-nal = "0.1.0"
