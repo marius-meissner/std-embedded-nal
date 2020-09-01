@@ -10,21 +10,23 @@ A way to use libraries written for the bare-metal embedded world on Linux.
 # Usage
 
 As the operating system's network stack is always available,
-it can be referenced at any time:
+it can be referenced at any time, roughly like this:
 
 ```rust
-use std_embedded_nal::UDP;
+use std_embedded_nal::STACK;
 use mebdedded_nal::{UdpStack, Mode};
 
 let message = [0x50, 0x01, 0x00, 0x00];
 
-let mut socket = UDP.open("127.0.0.1:5683".parse()?, Mode::Blocking)?;
-UDP.write(socket, message)?;
+let mut socket = STACK.open("127.0.0.1:5683".parse()?, Mode::Blocking)?;
+STACK.write(&mut socket, &message)?;
 ```
+
+See the CoAP and HTTP examples for full and working versions.
 
 # Maturity
 
-This crate so far only consists of documentation of what it should do.
+This crate contains minimal working implementations of the traits currently in embedded-nal.
 
 # Minimum Supported Rust Version
 

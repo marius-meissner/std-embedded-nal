@@ -8,6 +8,7 @@ description = "Implementation of the `embedded-nal` traits for large devices tha
 categories = ["embedded", "hardware-support"]
 keywords = ["network"]
 license = "MIT OR Apache-2.0"
+repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
 embedded-nal = "0.1.0"
