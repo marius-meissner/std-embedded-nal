@@ -1,9 +1,12 @@
-/// A brutally oversimplified CoAP client that GETs /.well-known/core from [::1]:5683
+/// A brutally oversimplified CoAP client that GETs /.well-known/core from localhost:5683
 
 use embedded_nal::nb::block;
 
-fn run<S: embedded_nal::UdpStack>(stack: &S) -> Result<(), S::Error> {
-    let target = embedded_nal::SocketAddr::new(embedded_nal::Ipv6Addr::localhost().into(), 5683);
+fn run<S: embedded_nal::UdpStack + embedded_nal::Dns>(stack: &S) -> Result<(), <S as embedded_nal::UdpStack>::Error>
+where
+    <S as embedded_nal::UdpStack>::Error: std::convert::From<<S as embedded_nal::Dns>::Error>
+{
+    let target = embedded_nal::SocketAddr::new(stack.gethostbyname("localhost", embedded_nal::AddrType::IPv6)?, 5683);
 
     let mut sock = stack.open(target, embedded_nal::Mode::Blocking)?;
     // It's opened in blocking mode, so we're not really expecting WouldBlock, but this gets us rid
