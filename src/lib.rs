@@ -18,9 +18,12 @@ mod conversion;
 /// The operating system's network stack, implementing ``embedded_nal::UdpStack`` and others.
 ///
 /// This is most easily accessed using the static ``STACK`` instance.
-pub struct Stack {
-    // Ensure extensibility. Chances are we won't need it, but can still be relaxed easily.
-    _private: ()
-}
+///
+/// The stack can be cloned, as it is not a resource that needs any synchronization. This is not
+/// made implicit as Copy, though (although there's not technical reason not to). That is to alert
+/// users to the difficulties that'd arise when taking ownership of a stack rather than just using
+/// it through a shared reference (which is generally possible in ``embedded_nal``).
+#[derive(Clone)]
+pub struct Stack;
 
-pub static STACK: Stack = Stack { _private: () };
+pub static STACK: Stack = Stack;
