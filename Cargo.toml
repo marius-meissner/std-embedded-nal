@@ -13,3 +13,7 @@ repository = "https://gitlab.com/chrysn/std-embedded-nal"
 [dependencies]
 embedded-nal = "0.1.0"
 heapless = "*"
+
+[badges]
+gitlab = { repository = "chrysn/std-embedded-nal" }
+maintenance = { status = "experimental" }
