@@ -75,7 +75,7 @@ impl embedded_nal::TcpStack for crate::Stack {
         Ok(TcpSocket { state: SocketState::Running(socket) })
     }
     fn is_connected(&self, socket: &TcpSocket) -> Result<bool, Self::Error> {
-        Ok(socket.get_mode().is_ok())
+        Ok(socket.get_mode().is_err())
     }
     fn write(&self, socket: &mut TcpSocket, buffer: &[u8]) -> Result<usize, nb::Error<std::io::Error>> {
         let socket = socket.get_running()?;
