@@ -22,7 +22,7 @@ fn run<S: embedded_nal::UdpStack>(stack: &S) -> Result<(), S::Error> {
 }
 
 fn main() {
-    let stack = &std_embedded_nal::UDP;
+    let stack = &std_embedded_nal::STACK;
 
     run(stack).expect("Error running the main program")
 }
