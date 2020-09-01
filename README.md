@@ -13,13 +13,13 @@ As the operating system's network stack is always available,
 it can be referenced at any time:
 
 ```rust
-use std_embedded_nal::udp;
+use std_embedded_nal::UDP;
 use mebdedded_nal::{UdpStack, Mode};
 
-let message = [0x50, 0x00, 0x01, 0x00, 0x00];
+let message = [0x50, 0x01, 0x00, 0x00];
 
-let mut socket = udp.open("127.0.0.1:5683".parse()?, Mode::Blocking)?;
-udp.write(socket, message)?;
+let mut socket = UDP.open("127.0.0.1:5683".parse()?, Mode::Blocking)?;
+UDP.write(socket, message)?;
 ```
 
 # Maturity
