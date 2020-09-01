@@ -1,7 +1,7 @@
 //! This crate implements the [embedded-nal] network traits for operating systems that support the
 //! standard library's network.
 //!
-//! UDP sockets are plainly wrapped and should behave unsuspiciously.
+//! UDP and TCP sockets are plainly wrapped and should behave unsuspiciously.
 //!
 //! The DNS implementation is slightly incomplete, as the Rust standard library contains no
 //! provisions to turn IP addresses back into hosts; that call thus fails unconditionally.
@@ -11,6 +11,7 @@
 //! [embedded-nal]: https://crates.io/crates/embedded-nal
 
 mod udp;
+mod tcp;
 mod dns;
 mod conversion;
 
