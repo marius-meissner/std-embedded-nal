@@ -1,0 +1,22 @@
+# Build tests (no test suite in here yet), and publishing the built version via
+# gitlab sites
+
+test:msrv:
+  image: rust:1.36
+  script:
+  - cargo version && cargo build --examples
+
+test:stable:
+  image: rust:latest
+  script:
+  - cargo version && cargo build --examples
+
+test:beta:
+  image: rustdocker/rust:beta
+  script:
+  - cargo version && cargo build --examples
+
+test:nightly:
+  image: rustdocker/rust:nightly
+  script:
+  - cargo version && cargo build --examples
