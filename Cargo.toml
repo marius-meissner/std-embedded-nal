@@ -12,7 +12,8 @@ repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
 embedded-nal = "0.1.0"
-heapless = "*"
+# Preferrably by https://github.com/rust-embedded-community/embedded-nal/issues/17
+heapless = "^0.5"
 
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }
