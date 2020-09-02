@@ -1,12 +1,16 @@
 /// A brutally oversimplified HTTP client that GETs / from localhost:80
-
 use embedded_nal::nb::block;
 
-fn run<S: embedded_nal::TcpStack + embedded_nal::Dns>(stack: &S) -> Result<(), <S as embedded_nal::TcpStack>::Error>
+fn run<S: embedded_nal::TcpStack + embedded_nal::Dns>(
+    stack: &S,
+) -> Result<(), <S as embedded_nal::TcpStack>::Error>
 where
-    <S as embedded_nal::TcpStack>::Error: std::convert::From<<S as embedded_nal::Dns>::Error>
+    <S as embedded_nal::TcpStack>::Error: std::convert::From<<S as embedded_nal::Dns>::Error>,
 {
-    let target = embedded_nal::SocketAddr::new(stack.gethostbyname("localhost", embedded_nal::AddrType::IPv6)?, 80);
+    let target = embedded_nal::SocketAddr::new(
+        stack.gethostbyname("localhost", embedded_nal::AddrType::IPv6)?,
+        80,
+    );
 
     let sock = stack.open(embedded_nal::Mode::Blocking)?;
     let mut sock = stack.connect(sock, target)?;

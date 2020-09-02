@@ -11,13 +11,16 @@ impl std::fmt::Display for NotFound {
     }
 }
 
-impl std::error::Error for NotFound {
-}
+impl std::error::Error for NotFound {}
 
 impl embedded_nal::Dns for crate::Stack {
     type Error = std::io::Error;
 
-    fn gethostbyname(&self, hostname: &str, addr_type: embedded_nal::AddrType) -> Result<embedded_nal::IpAddr, Self::Error> {
+    fn gethostbyname(
+        &self,
+        hostname: &str,
+        addr_type: embedded_nal::AddrType,
+    ) -> Result<embedded_nal::IpAddr, Self::Error> {
         let with_fake_port = if hostname.find(':').is_some() {
             format!("[{}]:1234", hostname)
         } else {
@@ -30,9 +33,13 @@ impl embedded_nal::Dns for crate::Stack {
         for addr in with_fake_port.to_socket_addrs() {
             for deep in addr {
                 match deep {
-                    std::net::SocketAddr::V4(v) if accept_v4 => { return Ok(v.ip().octets().into()); }
-                    std::net::SocketAddr::V6(v) if accept_v6 => { return Ok(v.ip().octets().into()); }
-                    _ => continue
+                    std::net::SocketAddr::V4(v) if accept_v4 => {
+                        return Ok(v.ip().octets().into());
+                    }
+                    std::net::SocketAddr::V6(v) if accept_v6 => {
+                        return Ok(v.ip().octets().into());
+                    }
+                    _ => continue,
                 }
             }
         }
@@ -40,7 +47,10 @@ impl embedded_nal::Dns for crate::Stack {
         Err(std::io::Error::new(std::io::ErrorKind::NotFound, NotFound))
     }
 
-    fn gethostbyaddr(&self, _addr: embedded_nal::IpAddr) -> Result<heapless::String<heapless::consts::U256>, Self::Error> {
+    fn gethostbyaddr(
+        &self,
+        _addr: embedded_nal::IpAddr,
+    ) -> Result<heapless::String<heapless::consts::U256>, Self::Error> {
         Err(std::io::Error::new(std::io::ErrorKind::NotFound, NotFound))
     }
 }

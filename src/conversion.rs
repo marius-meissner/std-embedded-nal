@@ -1,5 +1,5 @@
-use std::net::{SocketAddr, IpAddr};
 use embedded_nal::nb;
+use std::net::{IpAddr, SocketAddr};
 
 pub(crate) fn nal_to_std_ipaddr(input: embedded_nal::IpAddr) -> IpAddr {
     match input {
@@ -17,6 +17,6 @@ pub(crate) fn std_to_nal_error(input: std::io::Error) -> nb::Error<std::io::Erro
         std::io::ErrorKind::WouldBlock => nb::Error::WouldBlock,
         // can be returned from read according to set_read-timeout
         std::io::ErrorKind::TimedOut => nb::Error::WouldBlock,
-        _ => nb::Error::Other(input)
+        _ => nb::Error::Other(input),
     }
 }

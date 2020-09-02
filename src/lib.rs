@@ -10,10 +10,10 @@
 //!
 //! [embedded-nal]: https://crates.io/crates/embedded-nal
 
-mod udp;
-mod tcp;
-mod dns;
 mod conversion;
+mod dns;
+mod tcp;
+mod udp;
 
 /// The operating system's network stack, implementing ``embedded_nal::UdpStack`` and others.
 ///
