@@ -30,17 +30,15 @@ impl embedded_nal::Dns for crate::Stack {
         let accept_v4 = addr_type != embedded_nal::AddrType::IPv6;
         let accept_v6 = addr_type != embedded_nal::AddrType::IPv4;
 
-        for addr in with_fake_port.to_socket_addrs() {
-            for deep in addr {
-                match deep {
-                    std::net::SocketAddr::V4(v) if accept_v4 => {
-                        return Ok(v.ip().octets().into());
-                    }
-                    std::net::SocketAddr::V6(v) if accept_v6 => {
-                        return Ok(v.ip().octets().into());
-                    }
-                    _ => continue,
+        for addr in with_fake_port.to_socket_addrs()? {
+            match addr {
+                std::net::SocketAddr::V4(v) if accept_v4 => {
+                    return Ok(v.ip().octets().into());
                 }
+                std::net::SocketAddr::V6(v) if accept_v6 => {
+                    return Ok(v.ip().octets().into());
+                }
+                _ => continue,
             }
         }
 

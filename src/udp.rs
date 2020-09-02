@@ -50,7 +50,7 @@ impl embedded_nal::UdpStack for crate::Stack {
             .send(buffer)
             .map(|s| {
                 if s == buffer.len() {
-                    ()
+                    /* The expected outcome */
                 } else {
                     panic!("Send worked but did not send everything")
                 }
