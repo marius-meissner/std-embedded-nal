@@ -2,7 +2,7 @@
 # gitlab sites
 
 test:msrv:
-  image: rust:1.36
+  image: rust:1.40
   script:
   - cargo version && cargo build --examples
 
