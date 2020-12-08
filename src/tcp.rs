@@ -1,20 +1,8 @@
 use embedded_nal::nb;
+use std::io::{Read, Write};
 use std::net::TcpStream;
 
-use crate::conversion::*;
-
-/// An std::io::Error compatible error type returned when an operation is requested in the wrong
-/// sequence (where the "right" is open, connect, any read/write, and possibly close).
-#[derive(Debug)]
-struct OutOfOrder;
-
-impl std::fmt::Display for OutOfOrder {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Out of order operations requested")
-    }
-}
-
-impl std::error::Error for OutOfOrder {}
+use crate::conversion::{to_nb, OutOfOrder, SocketAddr};
 
 enum SocketState {
     Building(embedded_nal::Mode),
@@ -53,6 +41,7 @@ impl embedded_nal::TcpStack for crate::Stack {
             state: SocketState::Building(mode),
         })
     }
+
     fn connect(
         &self,
         socket: TcpSocket,
@@ -60,7 +49,7 @@ impl embedded_nal::TcpStack for crate::Stack {
     ) -> std::io::Result<TcpSocket> {
         let mode = socket.get_mode()?;
 
-        let socket = TcpStream::connect(nal_to_std_sockaddr(remote))?;
+        let socket = TcpStream::connect(SocketAddr::from(remote))?;
 
         match mode {
             embedded_nal::Mode::NonBlocking => {
@@ -84,30 +73,27 @@ impl embedded_nal::TcpStack for crate::Stack {
             state: SocketState::Running(socket),
         })
     }
+
     fn is_connected(&self, socket: &TcpSocket) -> Result<bool, Self::Error> {
         Ok(socket.get_mode().is_err())
     }
+
     fn write(
         &self,
         socket: &mut TcpSocket,
         buffer: &[u8],
-    ) -> Result<usize, nb::Error<std::io::Error>> {
+    ) -> Result<usize, nb::Error<Self::Error>> {
         let socket = socket.get_running()?;
-
-        use std::io::Write;
-
-        socket.write(buffer).map_err(std_to_nal_error)
+        socket.write(buffer).map_err(to_nb)
     }
+
     fn read(
         &self,
         socket: &mut TcpSocket,
         buffer: &mut [u8],
-    ) -> Result<usize, nb::Error<std::io::Error>> {
+    ) -> Result<usize, nb::Error<Self::Error>> {
         let socket = socket.get_running()?;
-
-        use std::io::Read;
-
-        socket.read(buffer).map_err(std_to_nal_error)
+        socket.read(buffer).map_err(to_nb)
     }
 
     fn close(&self, _: TcpSocket) -> Result<(), std::io::Error> {

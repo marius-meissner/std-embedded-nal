@@ -1,7 +1,7 @@
 use embedded_nal::nb;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
-
-use crate::conversion::*;
+use std::net::{self, Ipv4Addr, Ipv6Addr, UdpSocket};
+// IpAddr, SocketAddr
+use crate::conversion::{to_nb, SocketAddr};
 
 impl embedded_nal::UdpStack for crate::Stack {
     type UdpSocket = UdpSocket;
@@ -14,14 +14,14 @@ impl embedded_nal::UdpStack for crate::Stack {
     ) -> std::io::Result<UdpSocket> {
         let any = match remote {
             embedded_nal::SocketAddr::V4(_) => {
-                SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
+                net::SocketAddr::new(net::IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
             }
             embedded_nal::SocketAddr::V6(_) => {
-                SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+                net::SocketAddr::new(net::IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
             }
         };
         let sock = std::net::UdpSocket::bind(any)?;
-        sock.connect(nal_to_std_sockaddr(remote))?;
+        sock.connect(SocketAddr::from(remote))?;
 
         match mode {
             embedded_nal::Mode::NonBlocking => {
@@ -55,14 +55,14 @@ impl embedded_nal::UdpStack for crate::Stack {
                     panic!("Send worked but did not send everything")
                 }
             })
-            .map_err(std_to_nal_error)
+            .map_err(to_nb)
     }
     fn read(
         &self,
         socket: &mut UdpSocket,
         buffer: &mut [u8],
     ) -> Result<usize, nb::Error<std::io::Error>> {
-        socket.recv(buffer).map_err(std_to_nal_error)
+        socket.recv(buffer).map_err(to_nb)
     }
 
     fn close(&self, _: UdpSocket) -> Result<(), std::io::Error> {
