@@ -1,11 +1,12 @@
-use embedded_nal::nb;
-use std::net::{self, Ipv4Addr, Ipv6Addr, UdpSocket};
-// IpAddr, SocketAddr
 use crate::conversion::{to_nb, SocketAddr};
+use embedded_nal::nb;
+use std::io::{self, Error};
+use std::net::{self, IpAddr, Ipv4Addr, Ipv6Addr, UdpSocket};
+use std::time::Duration;
 
 impl embedded_nal::UdpStack for crate::Stack {
     type UdpSocket = UdpSocket;
-    type Error = std::io::Error;
+    type Error = Error;
 
     fn open(
         &self,
@@ -14,13 +15,13 @@ impl embedded_nal::UdpStack for crate::Stack {
     ) -> std::io::Result<UdpSocket> {
         let any = match remote {
             embedded_nal::SocketAddr::V4(_) => {
-                net::SocketAddr::new(net::IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
+                net::SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
             }
             embedded_nal::SocketAddr::V6(_) => {
-                net::SocketAddr::new(net::IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
+                net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
             }
         };
-        let sock = std::net::UdpSocket::bind(any)?;
+        let sock = UdpSocket::bind(any)?;
         sock.connect(SocketAddr::from(remote))?;
 
         match mode {
@@ -34,18 +35,14 @@ impl embedded_nal::UdpStack for crate::Stack {
             }
             embedded_nal::Mode::Timeout(millis) => {
                 sock.set_nonblocking(false)?;
-                sock.set_read_timeout(Some(std::time::Duration::from_millis(millis.into())))?;
-                sock.set_write_timeout(Some(std::time::Duration::from_millis(millis.into())))?;
+                sock.set_read_timeout(Some(Duration::from_millis(millis.into())))?;
+                sock.set_write_timeout(Some(Duration::from_millis(millis.into())))?;
             }
         }
 
         Ok(sock)
     }
-    fn write(
-        &self,
-        socket: &mut UdpSocket,
-        buffer: &[u8],
-    ) -> Result<(), nb::Error<std::io::Error>> {
+    fn write(&self, socket: &mut UdpSocket, buffer: &[u8]) -> nb::Result<(), Self::Error> {
         socket
             .send(buffer)
             .map(|s| {
@@ -57,15 +54,11 @@ impl embedded_nal::UdpStack for crate::Stack {
             })
             .map_err(to_nb)
     }
-    fn read(
-        &self,
-        socket: &mut UdpSocket,
-        buffer: &mut [u8],
-    ) -> Result<usize, nb::Error<std::io::Error>> {
+    fn read(&self, socket: &mut UdpSocket, buffer: &mut [u8]) -> nb::Result<usize, Self::Error> {
         socket.recv(buffer).map_err(to_nb)
     }
 
-    fn close(&self, _: UdpSocket) -> Result<(), std::io::Error> {
+    fn close(&self, _: UdpSocket) -> io::Result<()> {
         // No-op: Socket gets closed when it is freed
         //
         // Could wrap it in an Option, but really that'll only make things messier; users will

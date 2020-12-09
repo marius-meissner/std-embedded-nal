@@ -1,54 +1,53 @@
-use std::net::ToSocketAddrs;
+use embedded_nal::{AddrType, Dns, IpAddr};
+use heapless::consts::U256;
+use heapless::String;
+use std::error;
+use std::fmt::{self, Display, Formatter};
+use std::io::{Error, ErrorKind, Result};
+use std::net::{SocketAddr, ToSocketAddrs};
 
 /// An std::io::Error compatible error type constructable when to_socket_addrs comes up empty
 /// (because it does not produce an error of its own)
 #[derive(Debug)]
 struct NotFound;
 
-impl std::fmt::Display for NotFound {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl Display for NotFound {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "Not found")
     }
 }
 
-impl std::error::Error for NotFound {}
+impl error::Error for NotFound {}
 
-impl embedded_nal::Dns for crate::Stack {
-    type Error = std::io::Error;
+impl Dns for crate::Stack {
+    type Error = Error;
 
-    fn gethostbyname(
-        &self,
-        hostname: &str,
-        addr_type: embedded_nal::AddrType,
-    ) -> Result<embedded_nal::IpAddr, Self::Error> {
+    fn gethostbyname(&self, hostname: &str, addr_type: AddrType) -> Result<IpAddr> {
         let with_fake_port = if hostname.find(':').is_some() {
             format!("[{}]:1234", hostname)
         } else {
             format!("{}:1234", hostname)
         };
 
-        let accept_v4 = addr_type != embedded_nal::AddrType::IPv6;
-        let accept_v6 = addr_type != embedded_nal::AddrType::IPv4;
+        let accept_v4 = addr_type != AddrType::IPv6;
+        let accept_v6 = addr_type != AddrType::IPv4;
 
         for addr in with_fake_port.to_socket_addrs()? {
             match addr {
-                std::net::SocketAddr::V4(v) if accept_v4 => {
+                SocketAddr::V4(v) if accept_v4 => {
                     return Ok(v.ip().octets().into());
                 }
-                std::net::SocketAddr::V6(v) if accept_v6 => {
+                SocketAddr::V6(v) if accept_v6 => {
                     return Ok(v.ip().octets().into());
                 }
                 _ => continue,
             }
         }
 
-        Err(std::io::Error::new(std::io::ErrorKind::NotFound, NotFound))
+        Err(Error::new(ErrorKind::NotFound, NotFound))
     }
 
-    fn gethostbyaddr(
-        &self,
-        _addr: embedded_nal::IpAddr,
-    ) -> Result<heapless::String<heapless::consts::U256>, Self::Error> {
-        Err(std::io::Error::new(std::io::ErrorKind::NotFound, NotFound))
+    fn gethostbyaddr(&self, _addr: IpAddr) -> Result<String<U256>> {
+        Err(Error::new(ErrorKind::NotFound, NotFound))
     }
 }
