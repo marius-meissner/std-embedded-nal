@@ -13,20 +13,35 @@ As the operating system's network stack is always available,
 it can be referenced at any time, roughly like this:
 
 ```rust
+use embedded_nal::nb::block;
 use std_embedded_nal::STACK;
-use mebdedded_nal::{UdpStack, Mode};
+use embedded_nal::UdpClient;
 
 let message = [0x50, 0x01, 0x00, 0x00];
 
-let mut socket = STACK.open("127.0.0.1:5683".parse()?, Mode::Blocking)?;
-STACK.write(&mut socket, &message)?;
+let mut socket = STACK.socket()?;
+block!(STACK.connect(&mut socket, "127.0.0.1:5683".parse()?)?);
+block!(STACK.send(&mut socket, &message)?);
 ```
 
 See the CoAP and HTTP examples for full and working versions.
 
+# Performance
+
+As the 0.2 embedded-nal is exclusively operating in nonblocking mode,
+any practical use of this ends up busy-waiting for network events.
+That's abysmal for any production application.
+It my be acceptable during development
+(which is what this crate is primarily intended for:
+Test network components before flashing them onto embedded hardware),
+but still requires user awareness
+
+A nb based selector main loop might mitigte this to some extent,
+but the author is not aware of any such implementation.
+
 # Maturity
 
-This crate contains minimal working implementations of the traits currently in embedded-nal.
+This crate contains minimal working implementations of some of the traits currently in embedded-nal.
 
 # Minimum Supported Rust Version
 

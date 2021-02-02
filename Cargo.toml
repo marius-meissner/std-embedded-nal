@@ -11,7 +11,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
-embedded-nal = "0.1.0"
+embedded-nal = "0.2.0"
 # Preferrably by https://github.com/rust-embedded-community/embedded-nal/issues/17
 heapless = "^0.5"
 

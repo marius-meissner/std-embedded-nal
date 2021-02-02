@@ -1,23 +1,8 @@
 use embedded_nal::nb;
-use std::error;
-use std::fmt;
 use std::io;
 use std::net;
 use std::net::ToSocketAddrs;
 use std::option::IntoIter;
-
-/// An std::io::Error compatible error type returned when an operation is requested in the wrong
-/// sequence (where the "right" is open, connect, any read/write, and possibly close).
-#[derive(Debug)]
-pub(crate) struct OutOfOrder;
-
-impl fmt::Display for OutOfOrder {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Out of order operations requested")
-    }
-}
-
-impl error::Error for OutOfOrder {}
 
 pub(crate) fn to_nb(e: io::Error) -> nb::Error<io::Error> {
     use io::ErrorKind::{TimedOut, WouldBlock};
