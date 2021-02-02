@@ -58,10 +58,9 @@ impl UdpClient for crate::Stack {
         socket: &mut Self::UdpSocket,
         buffer: &mut [u8],
     ) -> nb::Result<(usize, embedded_nal::SocketAddr), Self::Error> {
-        let sock = socket.state.get_running()?;
-        let peer_addr = SocketAddr::from(sock.peer_addr()?);
-        sock.recv(buffer)
-            .map(|length| (length, peer_addr.into()))
+        let sock = socket.state.get_any()?;
+        sock.recv_from(buffer)
+            .map(|(length, peer_addr)| (length, SocketAddr::from(peer_addr).into()))
             .map_err(to_nb)
     }
 
@@ -72,5 +71,22 @@ impl UdpClient for crate::Stack {
         // probably drop the socket anyway after closing, and can't expect it to be usable with
         // this API.
         Ok(())
+    }
+}
+
+impl UdpServer for crate::Stack {
+    fn bind(&self, socket: &mut UdpSocket, port: u16) -> Result<(), Error> {
+        let anyaddressthisport = net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
+
+        let sock = net::UdpSocket::bind(anyaddressthisport)?;
+
+        sock.set_nonblocking(true)?;
+
+        socket.state = SocketState::Bound(sock);
+        Ok(())
+    }
+    fn send_to(&self, socket: &mut UdpSocket, remote: embedded_nal::SocketAddr, buffer: &[u8]) -> Result<(), nb::Error<Error>> {
+        let sock = socket.state.get_bound()?;
+        sock.send_to(buffer, SocketAddr::from(remote)).map(drop).map_err(to_nb)
     }
 }
