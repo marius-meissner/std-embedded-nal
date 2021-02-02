@@ -41,6 +41,15 @@ impl std::fmt::Display for OutOfOrder {
 
 impl std::error::Error for OutOfOrder {}
 
+impl<T> Into<std::io::Result<T>> for OutOfOrder {
+    fn into(self) -> std::io::Result<T> {
+        Err(std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                OutOfOrder,
+            ))
+    }
+}
+
 /// Socket
 enum SocketState<T> {
     Building,
@@ -55,10 +64,7 @@ impl<T> SocketState<T> {
     fn get_running(&mut self) -> std::io::Result<&mut T> {
         match self {
             SocketState::Connected(ref mut s) => Ok(s),
-            _ => Err(std::io::Error::new(
-                std::io::ErrorKind::NotConnected,
-                OutOfOrder,
-            )),
+            _ => OutOfOrder.into(),
         }
     }
 }
