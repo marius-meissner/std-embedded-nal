@@ -44,7 +44,7 @@ impl std::error::Error for OutOfOrder {}
 /// Socket
 enum SocketState<T> {
     Building,
-    Running(T),
+    Connected(T),
 }
 
 impl<T> SocketState<T> {
@@ -54,7 +54,7 @@ impl<T> SocketState<T> {
 
     fn get_running(&mut self) -> std::io::Result<&mut T> {
         match self {
-            SocketState::Running(ref mut s) => Ok(s),
+            SocketState::Connected(ref mut s) => Ok(s),
             _ => Err(std::io::Error::new(
                 std::io::ErrorKind::NotConnected,
                 OutOfOrder,

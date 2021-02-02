@@ -34,13 +34,13 @@ impl TcpClient for crate::Stack {
 
         soc.set_nonblocking(true)?;
 
-        socket.state = SocketState::Running(soc);
+        socket.state = SocketState::Connected(soc);
         Ok(())
     }
 
     fn is_connected(&self, socket: &TcpSocket) -> io::Result<bool> {
         Ok(match socket.state {
-            SocketState::Running(_) => true,
+            SocketState::Connected(_) => true,
             _ => false,
         })
     }

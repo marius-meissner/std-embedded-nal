@@ -1,7 +1,7 @@
 use crate::conversion::{to_nb, SocketAddr};
 use crate::SocketState;
 use embedded_nal::nb;
-use embedded_nal::UdpClient;
+use embedded_nal::{UdpClient, UdpServer};
 use std::io::{self, Error};
 use std::net::{self, IpAddr, Ipv4Addr, Ipv6Addr};
 
@@ -44,7 +44,7 @@ impl UdpClient for crate::Stack {
         sock.set_nonblocking(true)?;
 
         sock.connect(SocketAddr::from(remote))?;
-        socket.state = SocketState::Running(sock);
+        socket.state = SocketState::Connected(sock);
         Ok(())
     }
 
