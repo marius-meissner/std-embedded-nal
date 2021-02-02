@@ -76,3 +76,44 @@ impl Into<embedded_nal::SocketAddr> for SocketAddr {
         (IpAddr(self.0.ip()), self.0.port()).into()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn equal_ipv6() {
+        let nal: embedded_nal::IpAddr = "2001:db8::17".parse().unwrap();
+        let native: std::net::IpAddr = "2001:db8::17".parse().unwrap();
+
+        let converted_to_nal: embedded_nal::IpAddr = IpAddr(native).into();
+        assert_eq!(nal, converted_to_nal);
+
+        let converted_to_native: std::net::IpAddr = IpAddr::from(nal).into();
+        assert_eq!(native, converted_to_native);
+    }
+
+    #[test]
+    fn equal_ipv4() {
+        let nal: embedded_nal::IpAddr = "192.0.2.42".parse().unwrap();
+        let native: std::net::IpAddr = "192.0.2.42".parse().unwrap();
+
+        let converted_to_nal: embedded_nal::IpAddr = IpAddr(native).into();
+        assert_eq!(nal, converted_to_nal);
+
+        let converted_to_native: std::net::IpAddr = IpAddr::from(nal).into();
+        assert_eq!(native, converted_to_native);
+    }
+
+    #[test]
+    fn equal_port() {
+        let nal: embedded_nal::SocketAddr = "[2001:db8::17]:42".parse().unwrap();
+        let native: std::net::SocketAddr = "[2001:db8::17]:42".parse().unwrap();
+
+        let converted_to_nal: embedded_nal::SocketAddr = SocketAddr(native).into();
+        assert_eq!(nal, converted_to_nal);
+
+        let converted_to_native: std::net::SocketAddr = SocketAddr::from(nal).into();
+        assert_eq!(native, converted_to_native);
+    }
+}
