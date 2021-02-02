@@ -85,8 +85,15 @@ impl UdpServer for crate::Stack {
         socket.state = SocketState::Bound(sock);
         Ok(())
     }
-    fn send_to(&self, socket: &mut UdpSocket, remote: embedded_nal::SocketAddr, buffer: &[u8]) -> Result<(), nb::Error<Error>> {
+    fn send_to(
+        &self,
+        socket: &mut UdpSocket,
+        remote: embedded_nal::SocketAddr,
+        buffer: &[u8],
+    ) -> Result<(), nb::Error<Error>> {
         let sock = socket.state.get_bound()?;
-        sock.send_to(buffer, SocketAddr::from(remote)).map(drop).map_err(to_nb)
+        sock.send_to(buffer, SocketAddr::from(remote))
+            .map(drop)
+            .map_err(to_nb)
     }
 }

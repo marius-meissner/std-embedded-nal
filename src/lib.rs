@@ -44,9 +44,9 @@ impl std::error::Error for OutOfOrder {}
 impl<T> Into<std::io::Result<T>> for OutOfOrder {
     fn into(self) -> std::io::Result<T> {
         Err(std::io::Error::new(
-                std::io::ErrorKind::NotConnected,
-                OutOfOrder,
-            ))
+            std::io::ErrorKind::NotConnected,
+            OutOfOrder,
+        ))
     }
 }
 
