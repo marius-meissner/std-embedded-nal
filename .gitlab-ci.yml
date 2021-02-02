@@ -1,4 +1,5 @@
 test:msrv:
+  # Don't forget to update README when changing this!
   image: rust:1.40
   script:
   - cargo version && cargo build --examples && cargo test

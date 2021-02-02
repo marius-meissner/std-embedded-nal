@@ -36,7 +36,7 @@ It my be acceptable during development
 Test network components before flashing them onto embedded hardware),
 but still requires user awareness
 
-A nb based selector main loop might mitigte this to some extent,
+A nb based selector main loop might mitigate this to some extent,
 but the author is not aware of any such implementation.
 
 # Maturity
@@ -45,7 +45,7 @@ This crate contains minimal working implementations of some of the traits curren
 
 # Minimum Supported Rust Version
 
-This crate is build-tested on stable Rust 1.36.0.
+This crate is build-tested on stable Rust 1.40.0.
 It *might* compile with older versions but that may change at any time.
 
 [embedded-nal]: https://crates.io/crates/embedded-nal
