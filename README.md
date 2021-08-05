@@ -45,7 +45,7 @@ This crate contains minimal working implementations of some of the traits curren
 
 # Minimum Supported Rust Version
 
-This crate is build-tested on stable Rust 1.40.0.
+This crate is build-tested on stable Rust 1.51.0.
 It *might* compile with older versions but that may change at any time.
 
 [embedded-nal]: https://crates.io/crates/embedded-nal
