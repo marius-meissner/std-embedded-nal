@@ -1,6 +1,6 @@
 use embedded_nal::nb::block;
 
-fn echo(stack: &impl embedded_nal::UdpServer, addr: &str) {
+fn echo(stack: &mut impl embedded_nal::UdpFullStack, addr: &str) {
     let addr: embedded_nal::SocketAddr = addr.parse().unwrap();
     let mut servsock = stack.socket().unwrap();
     let mut clisock = stack.socket().unwrap();
@@ -23,10 +23,12 @@ fn echo(stack: &impl embedded_nal::UdpServer, addr: &str) {
 
 #[test]
 fn std_echov4() {
-    echo(&std_embedded_nal::STACK, "127.0.0.1:2342");
+    let mut stack = std_embedded_nal::STACK.clone();
+    echo(&mut stack, "127.0.0.1:2342");
 }
 
 #[test]
 fn std_echov6() {
-    echo(&std_embedded_nal::STACK, "[::1]:4223");
+    let mut stack = std_embedded_nal::STACK.clone();
+    echo(&mut stack, "[::1]:4223");
 }

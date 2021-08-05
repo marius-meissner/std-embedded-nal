@@ -1,14 +1,14 @@
 /// A brutally oversimplified HTTP client that GETs / from localhost:80
 use embedded_nal::nb::block;
-use embedded_nal::{Dns, TcpClient};
+use embedded_nal::{Dns, TcpClientStack};
 
-fn run<S, E>(stack: &S) -> Result<(), E>
+fn run<S, E>(stack: &mut S) -> Result<(), E>
 where
     E: core::fmt::Debug, // Might go away when MSRV goes up to 1.49, see https://github.com/rust-lang/rust/issues/80821
-    S: TcpClient<Error = E> + Dns<Error = E>,
+    S: TcpClientStack<Error = E> + Dns<Error = E>,
 {
     let target = embedded_nal::SocketAddr::new(
-        stack.gethostbyname("localhost", embedded_nal::AddrType::IPv6)?,
+        block!(stack.get_host_by_name("localhost", embedded_nal::AddrType::IPv6))?,
         80,
     );
 
@@ -26,7 +26,7 @@ where
 }
 
 fn main() {
-    let stack = &std_embedded_nal::STACK;
+    let mut stack = std_embedded_nal::STACK.clone();
 
-    run(stack).expect("Error running the main program")
+    run(&mut stack).expect("Error running the main program")
 }
