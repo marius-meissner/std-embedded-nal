@@ -11,9 +11,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
-embedded-nal = "0.2.0"
-# Can be replaced by embedded_nal::heapless starting with embedded-nal 0.2.1
-heapless = "^0.5"
+embedded-nal = "0.6"
 
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }
