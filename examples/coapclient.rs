@@ -27,7 +27,7 @@ where
 }
 
 fn main() {
-    let mut stack = std_embedded_nal::STACK.clone();
+    let mut stack = std_embedded_nal::Stack::default();
 
     run(&mut stack).expect("Error running the main program")
 }

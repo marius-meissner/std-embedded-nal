@@ -17,13 +17,13 @@ mod udp;
 
 /// The operating system's network stack, implementing ``embedded_nal::UdpStack`` and others.
 ///
-/// This is most easily accessed using the static ``STACK`` instance.
+/// The user may instantiate a stack using the `Stack::default()` function.
 ///
 /// The stack can be cloned, as it is not a resource that needs any synchronization. This is not
 /// made implicit as Copy, though (although there's not technical reason not to). That is to alert
 /// users to the difficulties that'd arise when taking ownership of a stack rather than just using
 /// it through a shared reference (which is generally possible in ``embedded_nal``).
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Stack;
 
 pub static STACK: Stack = Stack;

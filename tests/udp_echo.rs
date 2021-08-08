@@ -23,12 +23,12 @@ fn echo(stack: &mut impl embedded_nal::UdpFullStack, addr: &str) {
 
 #[test]
 fn std_echov4() {
-    let mut stack = std_embedded_nal::STACK.clone();
+    let mut stack = std_embedded_nal::Stack::default();
     echo(&mut stack, "127.0.0.1:2342");
 }
 
 #[test]
 fn std_echov6() {
-    let mut stack = std_embedded_nal::STACK.clone();
+    let mut stack = std_embedded_nal::Stack::default();
     echo(&mut stack, "[::1]:4223");
 }
