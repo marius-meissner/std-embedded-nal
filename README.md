@@ -14,14 +14,15 @@ it can be referenced at any time, roughly like this:
 
 ```rust
 use embedded_nal::nb::block;
-use std_embedded_nal::STACK;
+use std_embedded_nal::Stack;
 use embedded_nal::UdpClient;
 
 let message = [0x50, 0x01, 0x00, 0x00];
 
-let mut socket = STACK.socket()?;
-block!(STACK.connect(&mut socket, "127.0.0.1:5683".parse()?)?);
-block!(STACK.send(&mut socket, &message)?);
+let mut stack = Stack::default();
+let mut socket = stack.socket()?;
+block!(stack.connect(&mut socket, "127.0.0.1:5683".parse()?)?);
+block!(stack.send(&mut socket, &message)?);
 ```
 
 See the CoAP and HTTP examples for full and working versions.
@@ -45,7 +46,8 @@ This crate contains minimal working implementations of some of the traits curren
 
 # Minimum Supported Rust Version
 
-This crate is build-tested on stable Rust 1.40.0.
+This crate is build-tested on stable Rust 1.51.0.
+That is largely following the embedded-nal MSRV.
 It *might* compile with older versions but that may change at any time.
 
 [embedded-nal]: https://crates.io/crates/embedded-nal

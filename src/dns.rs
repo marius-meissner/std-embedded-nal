@@ -1,9 +1,7 @@
-use embedded_nal::{AddrType, Dns, IpAddr};
-use heapless::consts::U256;
-use heapless::String;
+use embedded_nal::{heapless::String, nb, AddrType, Dns, IpAddr};
 use std::error;
 use std::fmt::{self, Display, Formatter};
-use std::io::{Error, ErrorKind, Result};
+use std::io::{Error, ErrorKind};
 use std::net::{SocketAddr, ToSocketAddrs};
 
 /// An std::io::Error compatible error type constructable when to_socket_addrs comes up empty
@@ -22,7 +20,11 @@ impl error::Error for NotFound {}
 impl Dns for crate::Stack {
     type Error = Error;
 
-    fn gethostbyname(&self, hostname: &str, addr_type: AddrType) -> Result<IpAddr> {
+    fn get_host_by_name(
+        &mut self,
+        hostname: &str,
+        addr_type: AddrType,
+    ) -> Result<IpAddr, nb::Error<Error>> {
         let with_fake_port = if hostname.find(':').is_some() {
             format!("[{}]:1234", hostname)
         } else {
@@ -44,10 +46,10 @@ impl Dns for crate::Stack {
             }
         }
 
-        Err(Error::new(ErrorKind::NotFound, NotFound))
+        Err(nb::Error::Other(Error::new(ErrorKind::NotFound, NotFound)))
     }
 
-    fn gethostbyaddr(&self, _addr: IpAddr) -> Result<String<U256>> {
-        Err(Error::new(ErrorKind::NotFound, NotFound))
+    fn get_host_by_address(&mut self, _addr: IpAddr) -> Result<String<256>, nb::Error<Error>> {
+        Err(nb::Error::Other(Error::new(ErrorKind::NotFound, NotFound)))
     }
 }
