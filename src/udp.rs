@@ -6,7 +6,7 @@ use std::io::{self, Error};
 use std::net::{self, IpAddr, Ipv4Addr, Ipv6Addr};
 
 pub struct UdpSocket {
-    state: SocketState<net::UdpSocket>,
+    state: SocketState<net::UdpSocket, net::UdpSocket>,
 }
 
 impl UdpSocket {

@@ -53,31 +53,33 @@ impl<T> From<OutOfOrder> for std::io::Result<T> {
 }
 
 /// Socket
-enum SocketState<T> {
+enum SocketState<C, B> {
     Building,
-    Connected(T),
-    Bound(T),
+    Connected(C),
+    Bound(B),
 }
 
-impl<T> SocketState<T> {
+impl<C, B> SocketState<C, B> {
     fn new() -> Self {
         Self::Building
     }
 
-    fn get_running(&mut self) -> std::io::Result<&mut T> {
+    fn get_running(&mut self) -> std::io::Result<&mut C> {
         match self {
             SocketState::Connected(ref mut s) => Ok(s),
             _ => OutOfOrder.into(),
         }
     }
 
-    fn get_bound(&mut self) -> std::io::Result<&mut T> {
+    fn get_bound(&mut self) -> std::io::Result<&mut B> {
         match self {
             SocketState::Bound(ref mut s) => Ok(s),
             _ => OutOfOrder.into(),
         }
     }
+}
 
+impl<T> SocketState<T, T> {
     fn get_any(&mut self) -> std::io::Result<&mut T> {
         match self {
             SocketState::Connected(ref mut s) => Ok(s),
