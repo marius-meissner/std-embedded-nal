@@ -5,8 +5,6 @@ const PORT: u16 = 9876;
 
 #[test]
 fn udp_pingpong_self() {
-    // Lots of unwrap here as things are known to work immediately.
-
     use embedded_nal::{UdpClientStack, UdpFullStack};
 
     let mut stack = std_embedded_nal::Stack::default();
