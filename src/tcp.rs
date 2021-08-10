@@ -39,10 +39,7 @@ impl TcpClientStack for crate::Stack {
     }
 
     fn is_connected(&mut self, socket: &TcpSocket) -> io::Result<bool> {
-        Ok(match socket.state {
-            SocketState::Connected(_) => true,
-            _ => false,
-        })
+        Ok(matches!(socket.state, SocketState::Connected(_)))
     }
 
     fn send(&mut self, socket: &mut TcpSocket, buffer: &[u8]) -> nb::Result<usize, Self::Error> {
