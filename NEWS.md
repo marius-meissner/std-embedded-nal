@@ -1,3 +1,8 @@
+# Changes in 0.1.1
+
+* Added support for TCP servers (embedded_nal::TcpFullStack).
+* Added integration tests.
+
 # Changes in 0.1.0
 
 * embedded-nal dependency changed from 0.2 to 0.6.
