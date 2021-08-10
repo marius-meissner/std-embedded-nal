@@ -26,18 +26,18 @@ impl From<embedded_nal::IpAddr> for IpAddr {
     }
 }
 
-impl Into<embedded_nal::IpAddr> for IpAddr {
-    fn into(self) -> embedded_nal::IpAddr {
-        match self.0 {
+impl From<IpAddr> for embedded_nal::IpAddr {
+    fn from(s: IpAddr) -> embedded_nal::IpAddr {
+        match s.0 {
             net::IpAddr::V4(i) => i.octets().into(),
             net::IpAddr::V6(i) => i.octets().into(),
         }
     }
 }
 
-impl Into<net::IpAddr> for IpAddr {
-    fn into(self) -> net::IpAddr {
-        self.0
+impl From<IpAddr> for net::IpAddr {
+    fn from(s: IpAddr) -> net::IpAddr {
+        s.0
     }
 }
 
@@ -59,9 +59,9 @@ impl From<net::SocketAddr> for SocketAddr {
     }
 }
 
-impl Into<net::SocketAddr> for SocketAddr {
-    fn into(self) -> net::SocketAddr {
-        self.0
+impl From<SocketAddr> for net::SocketAddr {
+    fn from(s: SocketAddr) -> net::SocketAddr {
+        s.0
     }
 }
 
@@ -71,9 +71,9 @@ impl From<embedded_nal::SocketAddr> for SocketAddr {
     }
 }
 
-impl Into<embedded_nal::SocketAddr> for SocketAddr {
-    fn into(self) -> embedded_nal::SocketAddr {
-        (IpAddr(self.0.ip()), self.0.port()).into()
+impl From<SocketAddr> for embedded_nal::SocketAddr {
+    fn from(s: SocketAddr) -> embedded_nal::SocketAddr {
+        (IpAddr(s.0.ip()), s.0.port()).into()
     }
 }
 
