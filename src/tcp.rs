@@ -1,18 +1,24 @@
 use crate::conversion::{to_nb, SocketAddr};
 use crate::SocketState;
 use embedded_nal::nb;
-use embedded_nal::TcpClientStack;
+use embedded_nal::{TcpClientStack, TcpFullStack};
 use std::io::{self, Error, Read, Write};
-use std::net::TcpStream;
+use std::net::{self, TcpStream, TcpListener, IpAddr, Ipv6Addr};
 
 pub struct TcpSocket {
-    state: SocketState<TcpStream>,
+    state: SocketState<TcpStream, TcpListener>,
 }
 
 impl TcpSocket {
     fn new() -> Self {
         Self {
             state: SocketState::new(),
+        }
+    }
+
+    fn connected(s: TcpStream) -> Self {
+        Self {
+            state: SocketState::Connected(s)
         }
     }
 }
@@ -63,5 +69,30 @@ impl TcpClientStack for crate::Stack {
         // probably drop the socket anyway after closing, and can't expect it to be usable with
         // this API.
         Ok(())
+    }
+}
+
+impl TcpFullStack for crate::Stack {
+    fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Error> {
+        let anyaddressthisport = net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
+
+        let sock = TcpListener::bind(SocketAddr::from(anyaddressthisport))?;
+
+        sock.set_nonblocking(true)?;
+
+        socket.state = SocketState::Bound(sock);
+        Ok(())
+    }
+
+    fn listen(&mut self, _: &mut TcpSocket) -> Result<(), Error> {
+        // Seems to be implied in listener creation
+        Ok(())
+    }
+
+    fn accept(&mut self, socket: &mut TcpSocket) -> nb::Result<(TcpSocket, embedded_nal::SocketAddr), Self::Error> {
+        let sock = socket.state.get_bound()?;
+        sock.accept()
+            .map_err(to_nb)
+            .map(|(s, a)| (TcpSocket::connected(s), SocketAddr::from(a).into()))
     }
 }
