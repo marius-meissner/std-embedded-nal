@@ -12,6 +12,10 @@ repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
 embedded-nal = "0.6"
+# If enabled, these traits are implemented as well; they're experimental and
+# will hopefully wind up in alter embedded-nal versions, so enabling this has
+# no stability guarantees.
+embedded-nal-tcpextensions = { version = "0.1", optional = true }
 
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }

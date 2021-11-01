@@ -96,3 +96,25 @@ impl TcpFullStack for crate::Stack {
             .map(|(s, a)| (TcpSocket::connected(s), SocketAddr::from(a).into()))
     }
 }
+
+#[cfg(feature = "embedded-nal-tcpextensions")]
+impl embedded_nal_tcpextensions::TcpExactStack for crate::Stack {
+    // Arbitrary, but a) the std stack could allocate arbitrarily anyway, and b) this doesn't
+    // read into the output buffer incompletely (which is what'd make buffering tricky)
+    const RECVBUFLEN: usize = 4 * 1024 * 1024;
+    const SENDBUFLEN: usize = 4 * 1024 * 1024;
+
+    fn receive_exact(
+        &mut self,
+        socket: &mut Self::TcpSocket,
+        buffer: &mut [u8],
+    ) -> nb::Result<(), Self::Error> {
+        let socket = socket.state.get_running()?;
+        socket.read_exact(buffer).map_err(to_nb)
+    }
+
+    fn send_all(&mut self, socket: &mut Self::TcpSocket, buffer: &[u8]) -> Result<(), nb::Error<Self::Error>> {
+        let socket = socket.state.get_running()?;
+        socket.write_all(buffer).map_err(to_nb)
+    }
+}
