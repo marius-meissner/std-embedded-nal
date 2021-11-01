@@ -1,3 +1,9 @@
+# Changes in 0.1.2
+
+* Under embedded-nal-tcpextensions, added support for traits in module of the same name.
+
+  This is experimental, but functional and hopefully useful in evaluating that crate.
+
 # Changes in 0.1.1
 
 * Added support for TCP servers (embedded_nal::TcpFullStack).
