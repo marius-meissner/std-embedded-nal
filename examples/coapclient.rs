@@ -1,4 +1,5 @@
-/// A brutally oversimplified CoAP client that GETs /.well-known/core from localhost:5683
+//! A brutally oversimplified CoAP client that GETs /.well-known/core from localhost:5683
+
 use embedded_nal::nb::block;
 use embedded_nal::{Dns, UdpClientStack};
 

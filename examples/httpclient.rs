@@ -1,4 +1,5 @@
-/// A brutally oversimplified HTTP client that GETs / from localhost:80
+//! A brutally oversimplified HTTP client that GETs / from localhost:80
+
 use embedded_nal::nb::block;
 use embedded_nal::{Dns, TcpClientStack};
 
