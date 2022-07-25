@@ -103,3 +103,41 @@ impl embedded_nal_async::UdpClientStack for crate::Stack {
         std::future::ready(Ok(()))
     }
 }
+
+impl embedded_nal_async::UdpFullStack for crate::Stack {
+    type BindFuture<'m> = impl std::future::Future<Output = Result<(), Self::Error>> + 'm
+    where
+        Self: 'm;
+    type SendToFuture<'m> = impl std::future::Future<Output = Result<(), Self::Error>> + 'm
+    where
+        Self: 'm;
+
+    fn bind<'m>(&'m mut self, socket: &'m mut UdpSocket, port: u16) -> Self::BindFuture<'m> {
+        async move {
+            let anyaddressthisport = async_std::net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
+
+            let sock = async_std::net::UdpSocket::bind(anyaddressthisport).await?;
+
+            socket.state = SocketState::Bound(sock);
+            Ok(())
+        }
+    }
+
+    fn send_to<'m>(
+        &'m mut self,
+        socket: &'m mut UdpSocket,
+        remote: embedded_nal::SocketAddr,
+        buffer: &'m [u8],
+    ) -> Self::SendToFuture<'m> {
+        async move {
+            let sock = socket.state.get_bound()?;
+
+            use std::net::ToSocketAddrs;
+            sock.send_to(buffer, SocketAddr::from(remote).to_socket_addrs()?
+                         .next()
+                         .expect("Addresses converted from an embedded_nal address have exactly one socket address"))
+                .await
+                .map(drop)
+        }
+    }
+}
