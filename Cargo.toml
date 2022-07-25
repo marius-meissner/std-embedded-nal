@@ -20,7 +20,7 @@ async-std = { version = "1.12", optional = true }
 embedded-nal-tcpextensions = { version = "0.1", optional = true }
 
 [features]
-embedded-nal-async = [ "dep:embedded-nal-async", "async-std" ]
+async = [ "embedded-nal-async", "async-std" ]
 
 [dev-dependencies]
 mio = { version = "0.8", features = [ "os-ext" ] }
@@ -31,4 +31,4 @@ maintenance = { status = "experimental" }
 
 [[example]]
 name = "coapclient_async"
-required-features = [ "embedded-nal-async", "async-std/attributes" ]
+required-features = [ "async", "async-std/attributes" ]

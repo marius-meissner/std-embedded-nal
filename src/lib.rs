@@ -9,15 +9,15 @@
 //! All implementations use `std::io::Error` as their error type.
 //!
 //! [embedded-nal]: https://crates.io/crates/embedded-nal
-#![cfg_attr(feature = "embedded-nal-async", feature(generic_associated_types))] // for implementing -async
-#![cfg_attr(feature = "embedded-nal-async", feature(type_alias_impl_trait))] // as async blocks
+#![cfg_attr(feature = "async", feature(generic_associated_types))] // for implementing -async
+#![cfg_attr(feature = "async", feature(type_alias_impl_trait))] // as async blocks
                                                                              // don't provide types
 
 mod conversion;
 mod dns;
 mod tcp;
 mod udp;
-#[cfg(feature = "embedded-nal-async")]
+#[cfg(feature = "async")]
 mod udp_async;
 
 /// The operating system's network stack, implementing ``embedded_nal::UdpFullStack`` and others.
