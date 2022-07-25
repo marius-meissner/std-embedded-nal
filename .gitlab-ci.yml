@@ -17,4 +17,4 @@ test:beta:
 test:nightly:
   image: rustdocker/rust:nightly
   script:
-  - cargo version && cargo build --examples --all-features && cargo test
+  - cargo version && cargo build --examples --all-features && cargo test --all-features
