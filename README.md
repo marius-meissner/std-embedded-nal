@@ -27,29 +27,21 @@ block!(stack.send(&mut socket, &message)?);
 
 See the CoAP and HTTP examples for full and working versions.
 
-# Performance and non-blocking
+# Performance, non-blocking and async
 
-The client main examples run use `nb::block!`,
+When using the regular `embedded-nal` APIs,
+the client main examples run use `nb::block!`,
 which means that there is busy looping until an event arrives
 (which is bad in clients and terrible in servers).
 
-While the general async infrastructure of Rust is gaining traction,
-embedded-nal does [not yet] support that,
-and some use cases might never.
+The general expectation with these APIs based on `nb` is that
+users would know when to try again;
+the UNIX version of the `coapclient` example illustrates how that would probably be done.
+(The setup around `mio` and this library is relatively complex;
+embedded implementations might get away with less code there.)
 
-Finding when to retry will to some extent be application specific as long as async is not used.
-The TCP example plainly blocks which is terrible in terms of performance.
-The UDP example, on UNIX, uses `mio` to use the socket's exported raw file descriptor to wait until data is available.
-This approach will need some more evaluation before it can be recommended;
-chances are it will be overtaken by async work.
-
-Until either of that is widely available,
-users should be aware that `nb::block!` based solutions on `std` systems
-(or anywhere, really)
-have abysmal performance properties,
-and should not used outside of experimentation and testing.
-
-[not yet]: https://github.com/rust-embedded-community/embedded-nal/issues/6
+On nightly, and gated by the `async` feature,
+the asynchronous implementations of the [embedded-nal-async] crate are available.
 
 # Maturity
 
@@ -62,5 +54,6 @@ That is largely following the embedded-nal MSRV.
 It *might* compile with older versions but that may change at any time.
 
 [embedded-nal]: https://crates.io/crates/embedded-nal
+[embedded-nal-async]: https://crates.io/crates/embedded-nal-async
 [linux-embedded-hal]: https://crates.io/crates/linux-embedded-hal
 [embedded-hal]: https://crates.io/crates/embedded-hal
