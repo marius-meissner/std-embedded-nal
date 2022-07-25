@@ -27,20 +27,29 @@ block!(stack.send(&mut socket, &message)?);
 
 See the CoAP and HTTP examples for full and working versions.
 
-# Performance
+# Performance and non-blocking
 
-As embedded-nal is exclusively operating in nonblocking mode starting from version 0.2,
-any practical use of this ends up busy-waiting for network events.
-That's abysmal for any production application.
-It my be acceptable during development
-(which is what this crate is primarily intended for:
-Test network components before flashing them onto embedded hardware),
-but still requires user awareness.
+The client main examples run use `nb::block!`,
+which means that there is busy looping until an event arrives
+(which is bad in clients and terrible in servers).
 
-A nb based selector main loop,
-or a future migration of embedded-nal to a more elaborate async mechanism,
-might mitigate this to some extent,
-but the author is not aware of any such implementation.
+While the general async infrastructure of Rust is gaining traction,
+embedded-nal does [not yet] support that,
+and some use cases might never.
+
+Finding when to retry will to some extent be application specific as long as async is not used.
+The TCP example plainly blocks which is terrible in terms of performance.
+The UDP example, on UNIX, uses `mio` to use the socket's exported raw file descriptor to wait until data is available.
+This approach will need some more evaluation before it can be recommended;
+chances are it will be overtaken by async work.
+
+Until either of that is widely available,
+users should be aware that `nb::block!` based solutions on `std` systems
+(or anywhere, really)
+have abysmal performance properties,
+and should not used outside of experimentation and testing.
+
+[not yet]: https://github.com/rust-embedded-community/embedded-nal/issues/6
 
 # Maturity
 

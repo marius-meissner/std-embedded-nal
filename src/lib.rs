@@ -80,7 +80,15 @@ impl<C, B> SocketState<C, B> {
 }
 
 impl<T> SocketState<T, T> {
-    fn get_any(&mut self) -> std::io::Result<&mut T> {
+    fn get_any(&self) -> std::io::Result<&T> {
+        match self {
+            SocketState::Connected(ref s) => Ok(s),
+            SocketState::Bound(ref s) => Ok(s),
+            _ => OutOfOrder.into(),
+        }
+    }
+
+    fn get_any_mut(&mut self) -> std::io::Result<&mut T> {
         match self {
             SocketState::Connected(ref mut s) => Ok(s),
             SocketState::Bound(ref mut s) => Ok(s),

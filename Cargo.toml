@@ -17,6 +17,9 @@ embedded-nal = "0.6"
 # no stability guarantees.
 embedded-nal-tcpextensions = { version = "0.1", optional = true }
 
+[dev-dependencies]
+mio = { version = "0.8", features = [ "os-ext" ] }
+
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }
 maintenance = { status = "experimental" }
