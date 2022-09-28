@@ -1,22 +1,23 @@
 #![cfg(feature = "async")]
 
-async fn echo(stack: &mut impl embedded_nal_async::UdpFullStack, addr: &str) {
-    let addr: embedded_nal_async::SocketAddr = addr.parse().unwrap();
-    let mut servsock = stack.socket().await.unwrap();
-    let mut clisock = stack.socket().await.unwrap();
+use embedded_nal_async::{UdpStack, ConnectedUdp, UnconnectedUdp, SocketAddr};
 
-    stack.bind(&mut servsock, addr.port()).await.unwrap();
-    stack.connect(&mut clisock, addr).await.unwrap();
+async fn echo(stack: &mut impl UdpStack, addr: &str) {
+    let addr: SocketAddr = addr.parse().unwrap();
 
-    stack.send(&mut clisock, b"ping").await.unwrap();
+    let mut servsock = stack.bind_multiple(addr).await.unwrap();
+    let (cli_local, mut clisock) = stack.connect(addr).await.unwrap();
+
+    clisock.send(b"ping").await.unwrap();
     let mut buffer = [0u8; 10];
-    let (received, cliaddr) = stack.receive(&mut servsock, &mut buffer).await.unwrap();
+    let (received, servaddr, server_cliaddr) = servsock.receive_into(&mut buffer).await.unwrap();
     assert_eq!(received, 4);
     assert_eq!(&buffer[..4], b"ping");
+    assert_eq!(server_cliaddr, cli_local, "Client local and server remote address differ; NAT on loopback??");
 
-    stack.send_to(&mut servsock, cliaddr, b"pong").await.unwrap();
+    servsock.send(servaddr, server_cliaddr, b"pong").await.unwrap();
     let mut buffer = [0u8; 10];
-    let (received, _) = stack.receive(&mut clisock, &mut buffer).await.unwrap();
+    let received = clisock.receive_into(&mut buffer).await.unwrap();
     assert_eq!(received, 4);
     assert_eq!(&buffer[..4], b"pong");
 }

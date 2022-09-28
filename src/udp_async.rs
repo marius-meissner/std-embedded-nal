@@ -6,138 +6,201 @@
 //! the author is not sure whether that should be improved (would it make the future zero-sized),
 //! whether it can (as a rule of thumb, if it worked for nb it should support zero-sized futures)
 //! or whether it even makes a difference after an LTO pass.
+//!
+//! Known bugs:
+//! * Excessive lengths are not reported correctly except for the recvmsg version. This would be
+//!   fixed by using recvmsg more widely.
 
-use crate::conversion::SocketAddr;
+use crate::conversion;
 use crate::SocketState;
+use core::future::Future;
 use std::io::Error;
-use std::net::{self, IpAddr, Ipv4Addr, Ipv6Addr};
 
-pub struct UdpSocket {
-    state: SocketState<async_std::net::UdpSocket, async_std::net::UdpSocket>,
+use std::os::unix::io::AsRawFd;
+use std::os::unix::io::FromRawFd;
+
+pub struct ConnectedSocket(async_std::net::UdpSocket);
+pub struct UniquelyBoundSocket {
+    socket: async_std::net::UdpSocket,
+    // By storing this, we avoid the whole recvmsg hell, which we can because there's really only
+    // one relevant address. (Alternatively, we could call `.local_addr()` over and over).
+    bound_address: embedded_nal::SocketAddr,
+}
+pub struct MultiplyBoundSocket {
+    socket: async_io::Async<std::net::UdpSocket>,
+    // Storing this so we can return a full SocketAddr, even though pktinfo doesn't provide that
+    // information
+    port: u16,
 }
 
-impl UdpSocket {
-    fn new() -> Self {
-        Self {
-            state: SocketState::new(),
-        }
-    }
-
-    // Not providing as_raw_fd: The only reason this should be here is to enable async, which here
-    // is automatic.
-}
-
-impl embedded_nal_async::UdpClientStack for crate::Stack {
-    type UdpSocket = UdpSocket;
+impl embedded_nal_async::UdpStack for crate::Stack {
     type Error = Error;
-    type SocketFuture<'m> = impl std::future::Future<Output = Result<Self::UdpSocket, Self::Error>> where Self: 'm;
-    type ConnectFuture<'m> = impl std::future::Future<Output = Result<(), Self::Error>> where Self: 'm;
-    type SendFuture<'m> = impl std::future::Future<Output = Result<(), Self::Error>> + 'm
-    where
-        Self: 'm;
-    type ReceiveFuture<'m> = impl std::future::Future<Output = Result<(usize, embedded_nal::SocketAddr), Self::Error>> + 'm
-    where
-        Self: 'm;
-    type CloseFuture<'m> = std::future::Ready<Result<(), Self::Error>> where Self: 'm;
+    type Connected = ConnectedSocket;
+    type UniquelyBound = UniquelyBoundSocket;
+    type MultiplyBound = MultiplyBoundSocket;
 
-    fn socket<'m>(&'m mut self) -> Self::SocketFuture<'m> {
-        std::future::ready(Ok(UdpSocket::new()))
+    async fn connect_from(&self, local: embedded_nal::SocketAddr, remote: embedded_nal::SocketAddr) -> Result<(embedded_nal::SocketAddr, Self::Connected), Self::Error> {
+        let sock = async_std::net::UdpSocket::bind(
+            async_std::net::SocketAddr::from(conversion::SocketAddr::from(local))
+            ).await?;
+
+        sock.connect(
+            async_std::net::SocketAddr::from(conversion::SocketAddr::from(remote))
+            )
+            .await?;
+
+        let final_local = sock.local_addr()?;
+
+        Ok((
+                conversion::SocketAddr::from(final_local).into(),
+                ConnectedSocket(sock)
+                ))
     }
 
-    fn connect<'m>(
-        &'m mut self,
-        socket: &'m mut Self::UdpSocket,
-        remote: embedded_nal::SocketAddr,
-    ) -> Self::ConnectFuture<'m> {
-        async move {
-            let any = match remote {
-                embedded_nal::SocketAddr::V4(_) => {
-                    net::SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
-                }
-                embedded_nal::SocketAddr::V6(_) => {
-                    net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
-                }
-            };
+    async fn bind_single(&self, local: embedded_nal::SocketAddr) -> Result<(embedded_nal::SocketAddr, Self::UniquelyBound), Self::Error> {
+        let sock = async_std::net::UdpSocket::bind(
+            async_std::net::SocketAddr::from(conversion::SocketAddr::from(local))
+            ).await?;
 
-            let sock = async_std::net::UdpSocket::bind(any).await?;
+        let final_local = sock.local_addr()?;
+        let final_local = conversion::SocketAddr::from(final_local).into();
 
-            use std::net::ToSocketAddrs;
-            sock.connect(SocketAddr::from(remote).to_socket_addrs()?
-                         .next()
-                         .expect("Addresses converted from an embedded_nal address have exactly one socket address"))
-                .await?;
-            socket.state = SocketState::Connected(sock);
-            Ok(())
+        Ok((
+                final_local,
+                UniquelyBoundSocket { socket: sock, bound_address: final_local }
+                ))
+    }
+
+    async fn bind_multiple(&self, local: embedded_nal::SocketAddr) -> Result<Self::MultiplyBound, Self::Error> {
+        let sock = async_std::net::UdpSocket::bind(
+            async_std::net::SocketAddr::from(conversion::SocketAddr::from(local))
+            ).await?;
+
+        // Due to https://github.com/async-rs/async-std/issues/1040 we have to leave the
+        // friendly async_std territory and are on our own now.
+        let sock: async_io::Async<std::net::UdpSocket> = unsafe { core::mem::transmute(sock) };
+        let sock = sock.into_inner().unwrap();
+
+        nix::sys::socket::setsockopt(
+            sock.as_raw_fd(),
+            nix::sys::socket::sockopt::Ipv6RecvPacketInfo,
+            &true
+            )?;
+
+        let mut local_port = local.port();
+        if local_port == 0 {
+            local_port = sock.local_addr()?.port();
         }
-    }
 
-    fn send<'m>(
-        &'m mut self,
-        socket: &'m mut Self::UdpSocket,
-        buffer: &'m [u8],
-    ) -> Self::SendFuture<'m> {
-        async move {
-            let sock = socket.state.get_running()?;
-            sock.send(buffer).await.map(drop)
-        }
-    }
+        let sock = async_io::Async::new(sock)?;
 
-    fn receive<'m>(
-        &'m mut self,
-        socket: &'m mut Self::UdpSocket,
-        buffer: &'m mut [u8],
-    ) -> Self::ReceiveFuture<'m> {
-        async move {
-            let sock = socket.state.get_any_mut()?;
-            sock.recv_from(buffer)
-                .await
-                .map(|(length, peer_addr)| (length, SocketAddr::from(peer_addr).into()))
-        }
-    }
-    fn close<'m>(&'m mut self, _socket: Self::UdpSocket) -> Self::CloseFuture<'m> {
-        // No-op: Socket gets closed when it is freed
-        //
-        // Could wrap it in an Option, but really that'll only make things messier; users will
-        // probably drop the socket anyway after closing, and can't expect it to be usable with
-        // this API.
-        std::future::ready(Ok(()))
+        Ok(MultiplyBoundSocket { socket: sock, port: local_port })
     }
 }
 
-impl embedded_nal_async::UdpFullStack for crate::Stack {
-    type BindFuture<'m> = impl std::future::Future<Output = Result<(), Self::Error>> + 'm
-    where
-        Self: 'm;
-    type SendToFuture<'m> = impl std::future::Future<Output = Result<(), Self::Error>> + 'm
-    where
-        Self: 'm;
+impl embedded_nal_async::ConnectedUdp for ConnectedSocket {
+    type Error = Error;
 
-    fn bind<'m>(&'m mut self, socket: &'m mut UdpSocket, port: u16) -> Self::BindFuture<'m> {
-        async move {
-            let anyaddressthisport = async_std::net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
-
-            let sock = async_std::net::UdpSocket::bind(anyaddressthisport).await?;
-
-            socket.state = SocketState::Bound(sock);
-            Ok(())
-        }
+    async fn send(&mut self, data: &[u8]) -> Result<(), Self::Error> {
+        let sent_len = self.0.send(data).await?;
+        assert!(sent_len == data.len(), "Datagram was not sent in a single operation");
+        Ok(())
     }
 
-    fn send_to<'m>(
-        &'m mut self,
-        socket: &'m mut UdpSocket,
-        remote: embedded_nal::SocketAddr,
-        buffer: &'m [u8],
-    ) -> Self::SendToFuture<'m> {
-        async move {
-            let sock = socket.state.get_bound()?;
+    async fn receive_into(& mut self, buffer: & mut [u8]) -> Result<usize, Self::Error> {
+        self.0.recv(buffer).await
+    }
+}
 
-            use std::net::ToSocketAddrs;
-            sock.send_to(buffer, SocketAddr::from(remote).to_socket_addrs()?
-                         .next()
-                         .expect("Addresses converted from an embedded_nal address have exactly one socket address"))
-                .await
-                .map(drop)
+impl embedded_nal_async::UnconnectedUdp for UniquelyBoundSocket {
+    type Error = Error;
+
+    async fn send(&mut self, local: embedded_nal::SocketAddr, remote: embedded_nal::SocketAddr, data: &[u8]) -> Result<(), Self::Error> {
+        debug_assert!(
+            local == self.bound_address,
+            "A socket created from bind_single must always provide its original local address (or the one returned from a receive) in send"
+        );
+        let remote: async_std::net::SocketAddr = conversion::SocketAddr::from(remote).into();
+        let sent_len = self.socket.send_to(data, remote).await?;
+        assert!(sent_len == data.len(), "Datagram was not sent in a single operation");
+        Ok(())
+    }
+
+    async fn receive_into(&mut self, buffer: &mut [u8]) -> Result<(usize, embedded_nal::SocketAddr, embedded_nal::SocketAddr), Self::Error> {
+        let (length, remote) = self.socket.recv_from(buffer).await?;
+        let remote = conversion::SocketAddr::from(remote).into();
+        Ok((length, self.bound_address, remote))
+    }
+}
+
+impl embedded_nal_async::UnconnectedUdp for MultiplyBoundSocket {
+    type Error = Error;
+
+    async fn send(&mut self, local: embedded_nal::SocketAddr, remote: embedded_nal::SocketAddr, data: &[u8]) -> Result<(), Self::Error> {
+        if local.port() != 0 {
+            debug_assert_eq!(local.port(), self.port, "Packets can only be sent from the locally bound to port");
         }
+        let remote: async_std::net::SocketAddr = conversion::SocketAddr::from(remote).into();
+        // Taking this step on foot due to https://github.com/nix-rust/nix/issues/1754
+        // FIXME v6-only
+        let remote = match remote {
+            async_std::net::SocketAddr::V6(a) => a,
+            _ => panic!("Only IPv6 supported right now"),
+        };
+        let remote = std::net::SocketAddrV6::from(remote);
+        let remote = nix::sys::socket::SockaddrIn6::from(remote);
+        let local_pktinfo = conversion::IpAddr::from(local.ip()).into();
+        self.socket.write_with(|s| {
+            let sent_len = nix::sys::socket::sendmsg(
+                s.as_raw_fd(),
+                &[std::io::IoSlice::new(data)],
+                // FIXME this ignores the IP part of the local address
+                &[nix::sys::socket::ControlMessage::Ipv6PacketInfo(&local_pktinfo)],
+                nix::sys::socket::MsgFlags::empty(),
+                Some(&remote))?;
+            assert!(sent_len == data.len(), "Datagram was not sent in a single operation");
+            Ok(())
+        }).await
+    }
+
+    async fn receive_into(&mut self, buffer: &mut [u8]) -> Result<(usize, embedded_nal::SocketAddr, embedded_nal::SocketAddr), Self::Error> {
+        let (length, remote, local) = self.socket.read_with(|s| {
+            let mut iov = [std::io::IoSliceMut::new(buffer)];
+            let mut cmsg = nix::cmsg_space!(nix::libc::in6_pktinfo);
+            let received = nix::sys::socket::recvmsg(
+                s.as_raw_fd(),
+                &mut iov,
+                Some(&mut cmsg),
+                nix::sys::socket::MsgFlags::MSG_TRUNC,
+                )
+                .map_err(Error::from)?;
+            let local;
+            if let Some(nix::sys::socket::ControlMessageOwned::Ipv6PacketInfo(pi)) = received.cmsgs().next() {
+                local = embedded_nal::SocketAddr::new(
+                    conversion::IpAddr::from(pi).into(),
+                    self.port,
+                    );
+            } else {
+                panic!("Operating system failed to send IPv6 packet info after acknowledging the socket option");
+            }
+            Ok((received.bytes, received.address, local))
+        }).await?;
+
+        let remote: nix::sys::socket::SockaddrStorage = remote
+            .expect("recvmsg on UDP always returns a remote address");
+        // Taking this step on foot due to https://github.com/nix-rust/nix/issues/1754
+        let remote = remote.as_sockaddr_in6()
+            .expect("Right now this is IPv6 only");
+        let remote = std::net::SocketAddr::V6(
+            std::net::SocketAddrV6::new(
+                remote.ip(),
+                remote.port(),
+                remote.flowinfo(),
+                remote.scope_id(),
+                ));
+
+        // We could probably shorten things by going more directly from SockaddrLike
+        let remote = conversion::SocketAddr::from(remote).into();
+        Ok((length, local, remote))
     }
 }

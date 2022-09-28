@@ -9,9 +9,7 @@
 //! All implementations use `std::io::Error` as their error type.
 //!
 //! [embedded-nal]: https://crates.io/crates/embedded-nal
-#![cfg_attr(feature = "async", feature(generic_associated_types))] // for implementing -async
-#![cfg_attr(feature = "async", feature(type_alias_impl_trait))] // as async blocks
-                                                                             // don't provide types
+#![cfg_attr(feature = "async", feature(async_fn_in_trait))]
 
 mod conversion;
 mod dns;

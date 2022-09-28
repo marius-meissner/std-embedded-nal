@@ -26,6 +26,31 @@ impl From<embedded_nal::IpAddr> for IpAddr {
     }
 }
 
+// That this is missing zone info on IPv6 probably just makes std::net::IpAddr a bad intermediate
+// type.
+impl From<nix::libc::in6_pktinfo> for IpAddr {
+    fn from(input: nix::libc::in6_pktinfo) -> Self {
+        // FIXME why isn't this having zone infos??
+        Self(input.ipi6_addr.s6_addr.into())
+    }
+}
+
+impl From<IpAddr> for nix::libc::in6_pktinfo {
+    fn from(input: IpAddr) -> nix::libc::in6_pktinfo {
+        let input = match input.0 {
+            std::net::IpAddr::V6(a) => a,
+            _ => panic!("IPv6 only so far"),
+        };
+        nix::libc::in6_pktinfo {
+            ipi6_addr: nix::libc::in6_addr {
+                s6_addr: input.octets(),
+            },
+            // FIXME and here it really hurts
+            ipi6_ifindex: 0,
+        }
+    }
+}
+
 impl From<IpAddr> for embedded_nal::IpAddr {
     fn from(s: IpAddr) -> embedded_nal::IpAddr {
         match s.0 {
