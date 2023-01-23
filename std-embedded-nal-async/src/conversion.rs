@@ -30,7 +30,7 @@ impl From<IpAddr> for nix::libc::in6_pktinfo {
     fn from(input: IpAddr) -> nix::libc::in6_pktinfo {
         let input = match input.0 {
             std::net::IpAddr::V6(a) => a,
-            _ => panic!("IPv6 only so far"),
+            _ => panic!("Type requires IPv6 addresses"),
         };
         nix::libc::in6_pktinfo {
             ipi6_addr: nix::libc::in6_addr {
@@ -38,6 +38,32 @@ impl From<IpAddr> for nix::libc::in6_pktinfo {
             },
             // FIXME and here it really hurts
             ipi6_ifindex: 0,
+        }
+    }
+}
+
+impl From<nix::libc::in_pktinfo> for IpAddr {
+    fn from(input: nix::libc::in_pktinfo) -> Self {
+        // FIXME discarding interface index?
+        Self(net::Ipv4Addr::from(input.ipi_spec_dst.s_addr).into())
+    }
+}
+
+impl From<IpAddr> for nix::libc::in_pktinfo {
+    fn from(input: IpAddr) -> nix::libc::in_pktinfo {
+        let input = match input.0 {
+            std::net::IpAddr::V4(a) => a,
+            _ => panic!("Type requires IPv4 addresses"),
+        };
+        nix::libc::in_pktinfo {
+            ipi_spec_dst: nix::libc::in_addr {
+                s_addr: input.into(),
+            },
+            ipi_addr: nix::libc::in_addr {
+                s_addr: input.into(),
+            },
+            // FIXME and here it really hurts
+            ipi_ifindex: 0,
         }
     }
 }

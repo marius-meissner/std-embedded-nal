@@ -69,6 +69,8 @@ impl embedded_nal_async::UdpStack for crate::Stack {
     }
 
     async fn bind_multiple(&self, local: embedded_nal_async::SocketAddr) -> Result<Self::MultiplyBound, Self::Error> {
+        let is_v4 = matches!(&local, embedded_nal_async::SocketAddr::V4(_));
+
         let sock = async_std::net::UdpSocket::bind(
             async_std::net::SocketAddr::from(conversion::SocketAddr::from(local))
             ).await?;
@@ -78,11 +80,19 @@ impl embedded_nal_async::UdpStack for crate::Stack {
         let sock: async_io::Async<std::net::UdpSocket> = unsafe { core::mem::transmute(sock) };
         let sock = sock.into_inner().unwrap();
 
-        nix::sys::socket::setsockopt(
-            sock.as_raw_fd(),
-            nix::sys::socket::sockopt::Ipv6RecvPacketInfo,
-            &true
-            )?;
+        if is_v4 {
+            nix::sys::socket::setsockopt(
+                sock.as_raw_fd(),
+                nix::sys::socket::sockopt::Ipv4PacketInfo,
+                &true
+                )?;
+        } else {
+            nix::sys::socket::setsockopt(
+                sock.as_raw_fd(),
+                nix::sys::socket::sockopt::Ipv6RecvPacketInfo,
+                &true
+                )?;
+        }
 
         let mut local_port = local.port();
         if local_port == 0 {
@@ -138,26 +148,45 @@ impl embedded_nal_async::UnconnectedUdp for MultiplyBoundSocket {
             debug_assert_eq!(local.port(), self.port, "Packets can only be sent from the locally bound to port");
         }
         let remote: async_std::net::SocketAddr = conversion::SocketAddr::from(remote).into();
-        // Taking this step on foot due to https://github.com/nix-rust/nix/issues/1754
-        // FIXME v6-only
-        let remote = match remote {
-            async_std::net::SocketAddr::V6(a) => a,
-            _ => panic!("Only IPv6 supported right now"),
-        };
-        let remote = std::net::SocketAddrV6::from(remote);
-        let remote = nix::sys::socket::SockaddrIn6::from(remote);
-        let local_pktinfo = conversion::IpAddr::from(local.ip()).into();
-        self.socket.write_with(|s| {
-            let sent_len = nix::sys::socket::sendmsg(
-                s.as_raw_fd(),
-                &[std::io::IoSlice::new(data)],
-                // FIXME this ignores the IP part of the local address
-                &[nix::sys::socket::ControlMessage::Ipv6PacketInfo(&local_pktinfo)],
-                nix::sys::socket::MsgFlags::empty(),
-                Some(&remote))?;
-            assert!(sent_len == data.len(), "Datagram was not sent in a single operation");
-            Ok(())
-        }).await
+        match remote {
+            // The whole cases are distinct as send_msg is polymorphic
+            async_std::net::SocketAddr::V6(a) => {
+                let remote = std::net::SocketAddrV6::from(a);
+                // Taking this step on foot due to https://github.com/nix-rust/nix/issues/1754
+                let remote = nix::sys::socket::SockaddrIn6::from(remote);
+                let local_pktinfo = conversion::IpAddr::from(local.ip()).into();
+                let control = [nix::sys::socket::ControlMessage::Ipv6PacketInfo(&local_pktinfo)];
+                self.socket.write_with(|s| {
+                    let sent_len = nix::sys::socket::sendmsg(
+                        s.as_raw_fd(),
+                        &[std::io::IoSlice::new(data)],
+                        // FIXME this ignores the IP part of the local address
+                        &control,
+                        nix::sys::socket::MsgFlags::empty(),
+                        Some(&remote))?;
+                    assert!(sent_len == data.len(), "Datagram was not sent in a single operation");
+                    Ok(())
+                }).await
+            },
+            async_std::net::SocketAddr::V4(a) => {
+                let remote = std::net::SocketAddrV4::from(a);
+                // Taking this step on foot due to https://github.com/nix-rust/nix/issues/1754
+                let remote = nix::sys::socket::SockaddrIn::from(remote);
+                let local_pktinfo = conversion::IpAddr::from(local.ip()).into();
+                let control = [nix::sys::socket::ControlMessage::Ipv4PacketInfo(&local_pktinfo)];
+                self.socket.write_with(|s| {
+                    let sent_len = nix::sys::socket::sendmsg(
+                        s.as_raw_fd(),
+                        &[std::io::IoSlice::new(data)],
+                        // FIXME this ignores the IP part of the local address
+                        &control,
+                        nix::sys::socket::MsgFlags::empty(),
+                        Some(&remote))?;
+                    assert!(sent_len == data.len(), "Datagram was not sent in a single operation");
+                    Ok(())
+                }).await
+            }
+        }
     }
 
     async fn receive_into(&mut self, buffer: &mut [u8]) -> Result<(usize, embedded_nal_async::SocketAddr, embedded_nal_async::SocketAddr), Self::Error> {
@@ -171,30 +200,44 @@ impl embedded_nal_async::UnconnectedUdp for MultiplyBoundSocket {
                 nix::sys::socket::MsgFlags::MSG_TRUNC,
                 )
                 .map_err(Error::from)?;
-            let local;
-            if let Some(nix::sys::socket::ControlMessageOwned::Ipv6PacketInfo(pi)) = received.cmsgs().next() {
-                local = embedded_nal_async::SocketAddr::new(
-                    conversion::IpAddr::from(pi).into(),
-                    self.port,
-                    );
-            } else {
-                panic!("Operating system failed to send IPv6 packet info after acknowledging the socket option");
-            }
+            let local = match received.cmsgs().next() {
+                Some(nix::sys::socket::ControlMessageOwned::Ipv6PacketInfo(pi)) => {
+                    embedded_nal_async::SocketAddr::new(
+                        conversion::IpAddr::from(pi).into(),
+                        self.port,
+                        )
+                },
+                Some(nix::sys::socket::ControlMessageOwned::Ipv4PacketInfo(pi)) => {
+                    embedded_nal_async::SocketAddr::new(
+                        conversion::IpAddr::from(pi).into(),
+                        self.port,
+                        )
+                },
+                _ => panic!("Operating system failed to send IPv4/IPv6 packet info after acknowledging the socket option")
+            };
             Ok((received.bytes, received.address, local))
         }).await?;
 
         let remote: nix::sys::socket::SockaddrStorage = remote
             .expect("recvmsg on UDP always returns a remote address");
         // Taking this step on foot due to https://github.com/nix-rust/nix/issues/1754
-        let remote = remote.as_sockaddr_in6()
-            .expect("Right now this is IPv6 only");
-        let remote = std::net::SocketAddr::V6(
-            std::net::SocketAddrV6::new(
-                remote.ip(),
-                remote.port(),
-                remote.flowinfo(),
-                remote.scope_id(),
-                ));
+        let remote = match (remote.as_sockaddr_in6(), remote.as_sockaddr_in()) {
+            (Some(remote), None) => std::net::SocketAddr::V6(
+                std::net::SocketAddrV6::new(
+                    remote.ip(),
+                    remote.port(),
+                    remote.flowinfo(),
+                    remote.scope_id(),
+                    )
+                ),
+            (None, Some(remote)) => std::net::SocketAddr::V4(
+                std::net::SocketAddrV4::new(
+                    remote.ip().into(),
+                    remote.port(),
+                    )
+                ),
+            _ => panic!("Unexpected address type"),
+        };
 
         // We could probably shorten things by going more directly from SockaddrLike
         let remote = conversion::SocketAddr::from(remote).into();
