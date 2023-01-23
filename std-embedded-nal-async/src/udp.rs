@@ -150,8 +150,7 @@ impl embedded_nal_async::UnconnectedUdp for MultiplyBoundSocket {
         let remote: async_std::net::SocketAddr = conversion::SocketAddr::from(remote).into();
         match remote {
             // The whole cases are distinct as send_msg is polymorphic
-            async_std::net::SocketAddr::V6(a) => {
-                let remote = std::net::SocketAddrV6::from(a);
+            async_std::net::SocketAddr::V6(remote) => {
                 // Taking this step on foot due to https://github.com/nix-rust/nix/issues/1754
                 let remote = nix::sys::socket::SockaddrIn6::from(remote);
                 let local_pktinfo = conversion::IpAddr::from(local.ip()).into();
@@ -168,8 +167,7 @@ impl embedded_nal_async::UnconnectedUdp for MultiplyBoundSocket {
                     Ok(())
                 }).await
             },
-            async_std::net::SocketAddr::V4(a) => {
-                let remote = std::net::SocketAddrV4::from(a);
+            async_std::net::SocketAddr::V4(remote) => {
                 // Taking this step on foot due to https://github.com/nix-rust/nix/issues/1754
                 let remote = nix::sys::socket::SockaddrIn::from(remote);
                 let local_pktinfo = conversion::IpAddr::from(local.ip()).into();
