@@ -18,3 +18,4 @@ test:nightly:
   image: rustdocker/rust:nightly
   script:
   - cargo version && cargo build --examples --all-features && cargo test --all-features
+  - cd std-embedded-nal-async/ && cargo version && cargo build --examples --all-features && cargo test --all-features

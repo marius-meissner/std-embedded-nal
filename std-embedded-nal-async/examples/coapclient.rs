@@ -8,7 +8,7 @@ where
     S: UdpStack<Error = E>,
     S::Connected: ConnectedUdp<Error = E>,
 {
-    let target = embedded_nal::SocketAddr::new(
+    let target = embedded_nal_async::SocketAddr::new(
         "::1".parse().unwrap(),
         5683,
     );
@@ -28,7 +28,7 @@ where
 
 #[async_std::main]
 async fn main() {
-    let mut stack = std_embedded_nal::Stack::default();
+    let mut stack = std_embedded_nal_async::Stack::default();
 
     run(&mut stack).await.expect("Error running the main program");
 }

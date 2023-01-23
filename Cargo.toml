@@ -12,19 +12,10 @@ repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
 embedded-nal = "0.6"
-embedded-nal-async = { git = "https://github.com/rust-embedded-community/embedded-nal", optional = true }
-embedded-io = { version = "0.4", optional = true, features = [ "std" ] }
-async-std = { version = "1.12", optional = true }
 # If enabled, these traits are implemented as well; they're experimental and
 # will hopefully wind up in alter embedded-nal versions, so enabling this has
 # no stability guarantees.
 embedded-nal-tcpextensions = { version = "0.1", optional = true }
-
-async-io = "^1.9"
-nix = { version = "0.25", features = [ "socket", "net", "uio" ] }
-
-[features]
-async = [ "embedded-nal-async", "async-std", "embedded-io" ]
 
 [dev-dependencies]
 mio = { version = "0.8", features = [ "os-ext" ] }
@@ -32,7 +23,3 @@ mio = { version = "0.8", features = [ "os-ext" ] }
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }
 maintenance = { status = "experimental" }
-
-[[example]]
-name = "coapclient_async"
-required-features = [ "async", "async-std/attributes" ]

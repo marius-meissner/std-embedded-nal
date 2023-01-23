@@ -1,5 +1,3 @@
-#![cfg(feature = "async")]
-
 use embedded_nal_async::{UdpStack, ConnectedUdp, UnconnectedUdp, SocketAddr};
 
 async fn echo(stack: &mut impl UdpStack, addr: &str) {
@@ -24,12 +22,12 @@ async fn echo(stack: &mut impl UdpStack, addr: &str) {
 
 #[test]
 fn std_echov4() {
-    let mut stack = std_embedded_nal::Stack::default();
+    let mut stack = std_embedded_nal_async::Stack::default();
     async_std::task::block_on(echo(&mut stack, "127.0.0.1:2342"));
 }
 
 #[test]
 fn std_echov6() {
-    let mut stack = std_embedded_nal::Stack::default();
+    let mut stack = std_embedded_nal_async::Stack::default();
     async_std::task::block_on(echo(&mut stack, "[::1]:4223"));
 }

@@ -12,19 +12,16 @@
 //!   fixed by using recvmsg more widely.
 
 use crate::conversion;
-use crate::SocketState;
-use core::future::Future;
 use std::io::Error;
 
 use std::os::unix::io::AsRawFd;
-use std::os::unix::io::FromRawFd;
 
 pub struct ConnectedSocket(async_std::net::UdpSocket);
 pub struct UniquelyBoundSocket {
     socket: async_std::net::UdpSocket,
     // By storing this, we avoid the whole recvmsg hell, which we can because there's really only
     // one relevant address. (Alternatively, we could call `.local_addr()` over and over).
-    bound_address: embedded_nal::SocketAddr,
+    bound_address: embedded_nal_async::SocketAddr,
 }
 pub struct MultiplyBoundSocket {
     socket: async_io::Async<std::net::UdpSocket>,
@@ -39,7 +36,7 @@ impl embedded_nal_async::UdpStack for crate::Stack {
     type UniquelyBound = UniquelyBoundSocket;
     type MultiplyBound = MultiplyBoundSocket;
 
-    async fn connect_from(&self, local: embedded_nal::SocketAddr, remote: embedded_nal::SocketAddr) -> Result<(embedded_nal::SocketAddr, Self::Connected), Self::Error> {
+    async fn connect_from(&self, local: embedded_nal_async::SocketAddr, remote: embedded_nal_async::SocketAddr) -> Result<(embedded_nal_async::SocketAddr, Self::Connected), Self::Error> {
         let sock = async_std::net::UdpSocket::bind(
             async_std::net::SocketAddr::from(conversion::SocketAddr::from(local))
             ).await?;
@@ -57,7 +54,7 @@ impl embedded_nal_async::UdpStack for crate::Stack {
                 ))
     }
 
-    async fn bind_single(&self, local: embedded_nal::SocketAddr) -> Result<(embedded_nal::SocketAddr, Self::UniquelyBound), Self::Error> {
+    async fn bind_single(&self, local: embedded_nal_async::SocketAddr) -> Result<(embedded_nal_async::SocketAddr, Self::UniquelyBound), Self::Error> {
         let sock = async_std::net::UdpSocket::bind(
             async_std::net::SocketAddr::from(conversion::SocketAddr::from(local))
             ).await?;
@@ -71,7 +68,7 @@ impl embedded_nal_async::UdpStack for crate::Stack {
                 ))
     }
 
-    async fn bind_multiple(&self, local: embedded_nal::SocketAddr) -> Result<Self::MultiplyBound, Self::Error> {
+    async fn bind_multiple(&self, local: embedded_nal_async::SocketAddr) -> Result<Self::MultiplyBound, Self::Error> {
         let sock = async_std::net::UdpSocket::bind(
             async_std::net::SocketAddr::from(conversion::SocketAddr::from(local))
             ).await?;
@@ -115,7 +112,7 @@ impl embedded_nal_async::ConnectedUdp for ConnectedSocket {
 impl embedded_nal_async::UnconnectedUdp for UniquelyBoundSocket {
     type Error = Error;
 
-    async fn send(&mut self, local: embedded_nal::SocketAddr, remote: embedded_nal::SocketAddr, data: &[u8]) -> Result<(), Self::Error> {
+    async fn send(&mut self, local: embedded_nal_async::SocketAddr, remote: embedded_nal_async::SocketAddr, data: &[u8]) -> Result<(), Self::Error> {
         debug_assert!(
             local == self.bound_address,
             "A socket created from bind_single must always provide its original local address (or the one returned from a receive) in send"
@@ -126,7 +123,7 @@ impl embedded_nal_async::UnconnectedUdp for UniquelyBoundSocket {
         Ok(())
     }
 
-    async fn receive_into(&mut self, buffer: &mut [u8]) -> Result<(usize, embedded_nal::SocketAddr, embedded_nal::SocketAddr), Self::Error> {
+    async fn receive_into(&mut self, buffer: &mut [u8]) -> Result<(usize, embedded_nal_async::SocketAddr, embedded_nal_async::SocketAddr), Self::Error> {
         let (length, remote) = self.socket.recv_from(buffer).await?;
         let remote = conversion::SocketAddr::from(remote).into();
         Ok((length, self.bound_address, remote))
@@ -136,7 +133,7 @@ impl embedded_nal_async::UnconnectedUdp for UniquelyBoundSocket {
 impl embedded_nal_async::UnconnectedUdp for MultiplyBoundSocket {
     type Error = Error;
 
-    async fn send(&mut self, local: embedded_nal::SocketAddr, remote: embedded_nal::SocketAddr, data: &[u8]) -> Result<(), Self::Error> {
+    async fn send(&mut self, local: embedded_nal_async::SocketAddr, remote: embedded_nal_async::SocketAddr, data: &[u8]) -> Result<(), Self::Error> {
         if local.port() != 0 {
             debug_assert_eq!(local.port(), self.port, "Packets can only be sent from the locally bound to port");
         }
@@ -163,7 +160,7 @@ impl embedded_nal_async::UnconnectedUdp for MultiplyBoundSocket {
         }).await
     }
 
-    async fn receive_into(&mut self, buffer: &mut [u8]) -> Result<(usize, embedded_nal::SocketAddr, embedded_nal::SocketAddr), Self::Error> {
+    async fn receive_into(&mut self, buffer: &mut [u8]) -> Result<(usize, embedded_nal_async::SocketAddr, embedded_nal_async::SocketAddr), Self::Error> {
         let (length, remote, local) = self.socket.read_with(|s| {
             let mut iov = [std::io::IoSliceMut::new(buffer)];
             let mut cmsg = nix::cmsg_space!(nix::libc::in6_pktinfo);
@@ -176,7 +173,7 @@ impl embedded_nal_async::UnconnectedUdp for MultiplyBoundSocket {
                 .map_err(Error::from)?;
             let local;
             if let Some(nix::sys::socket::ControlMessageOwned::Ipv6PacketInfo(pi)) = received.cmsgs().next() {
-                local = embedded_nal::SocketAddr::new(
+                local = embedded_nal_async::SocketAddr::new(
                     conversion::IpAddr::from(pi).into(),
                     self.port,
                     );
