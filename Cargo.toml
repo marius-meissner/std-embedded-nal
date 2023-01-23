@@ -2,7 +2,7 @@
 name = "std-embedded-nal"
 version = "0.1.3"
 authors = ["chrysn <chrysn@fsfe.org>"]
-edition = "2021"
+edition = "2018"
 
 description = "Implementation of the `embedded-nal` traits for large devices that support the standard library"
 categories = ["embedded", "hardware-support"]
