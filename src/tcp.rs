@@ -159,7 +159,7 @@ impl embedded_nal_tcpextensions::TcpExactStack for crate::Stack {
         buffer: &mut [u8],
     ) -> nb::Result<(), Self::Error> {
         let socket = socket.state.get_running()?;
-        socket.read_exact(buffer).map_err(to_nb)
+        socket.read_exact(buffer).map_err(Self::Error::to_nb)
     }
 
     fn send_all(
@@ -168,6 +168,6 @@ impl embedded_nal_tcpextensions::TcpExactStack for crate::Stack {
         buffer: &[u8],
     ) -> Result<(), nb::Error<Self::Error>> {
         let socket = socket.state.get_running()?;
-        socket.write_all(buffer).map_err(to_nb)
+        socket.write_all(buffer).map_err(Self::Error::to_nb)
     }
 }
