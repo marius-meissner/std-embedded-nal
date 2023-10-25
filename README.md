@@ -49,7 +49,7 @@ This crate contains minimal working implementations the traits currently in embe
 
 # Minimum Supported Rust Version
 
-This crate is build-tested on stable Rust 1.51.0.
+This crate is build-tested on stable Rust 1.53.0.
 That is largely following the embedded-nal MSRV.
 It *might* compile with older versions but that may change at any time.
 

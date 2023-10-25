@@ -1,9 +1,37 @@
-use crate::conversion::{to_nb, SocketAddr};
+use crate::conversion::SocketAddr;
 use crate::SocketState;
 use embedded_nal::nb;
 use embedded_nal::{TcpClientStack, TcpFullStack};
-use std::io::{self, Error, Read, Write};
-use std::net::{self, TcpStream, TcpListener, IpAddr, Ipv6Addr};
+use std::io::{Error, Read, Write};
+use std::net::{self, IpAddr, Ipv6Addr, TcpListener, TcpStream};
+
+#[derive(Debug)]
+pub struct TcpError(pub Error);
+
+impl From<Error> for TcpError {
+    fn from(e: Error) -> Self {
+        Self(e)
+    }
+}
+
+impl TcpError {
+    fn to_nb(e: Error) -> nb::Error<Self> {
+        use std::io::ErrorKind::{TimedOut, WouldBlock};
+        match e.kind() {
+            WouldBlock | TimedOut => nb::Error::WouldBlock,
+            _ => nb::Error::Other(Self(e)),
+        }
+    }
+}
+
+impl embedded_nal::TcpError for TcpError {
+    fn kind(&self) -> embedded_nal::TcpErrorKind {
+        match self.0.kind() {
+            std::io::ErrorKind::BrokenPipe => embedded_nal::TcpErrorKind::PipeClosed,
+            _ => embedded_nal::TcpErrorKind::Other,
+        }
+    }
+}
 
 pub struct TcpSocket {
     state: SocketState<TcpStream, TcpListener>,
@@ -18,7 +46,7 @@ impl TcpSocket {
 
     fn connected(s: TcpStream) -> Self {
         Self {
-            state: SocketState::Connected(s)
+            state: SocketState::Connected(s),
         }
     }
 
@@ -40,16 +68,16 @@ impl TcpSocket {
         match &self.state {
             SocketState::Connected(s) => Some(s.as_raw_fd()),
             SocketState::Bound(s) => Some(s.as_raw_fd()),
-            SocketState::Building => None
+            SocketState::Building => None,
         }
     }
 }
 
 impl TcpClientStack for crate::Stack {
     type TcpSocket = TcpSocket;
-    type Error = Error;
+    type Error = TcpError;
 
-    fn socket(&mut self) -> io::Result<TcpSocket> {
+    fn socket(&mut self) -> Result<TcpSocket, Self::Error> {
         Ok(TcpSocket::new())
     }
 
@@ -58,21 +86,17 @@ impl TcpClientStack for crate::Stack {
         socket: &mut TcpSocket,
         remote: embedded_nal::SocketAddr,
     ) -> nb::Result<(), Self::Error> {
-        let soc = TcpStream::connect(SocketAddr::from(remote))?;
+        let soc = TcpStream::connect(SocketAddr::from(remote)).map_err(Self::Error::from)?;
 
-        soc.set_nonblocking(true)?;
+        soc.set_nonblocking(true).map_err(Self::Error::from)?;
 
         socket.state = SocketState::Connected(soc);
         Ok(())
     }
 
-    fn is_connected(&mut self, socket: &TcpSocket) -> io::Result<bool> {
-        Ok(matches!(socket.state, SocketState::Connected(_)))
-    }
-
     fn send(&mut self, socket: &mut TcpSocket, buffer: &[u8]) -> nb::Result<usize, Self::Error> {
-        let socket = socket.state.get_running()?;
-        socket.write(buffer).map_err(to_nb)
+        let socket = socket.state.get_running().map_err(Self::Error::from)?;
+        socket.write(buffer).map_err(Self::Error::to_nb)
     }
 
     fn receive(
@@ -80,11 +104,11 @@ impl TcpClientStack for crate::Stack {
         socket: &mut TcpSocket,
         buffer: &mut [u8],
     ) -> nb::Result<usize, Self::Error> {
-        let socket = socket.state.get_running()?;
-        socket.read(buffer).map_err(to_nb)
+        let socket = socket.state.get_running().map_err(Self::Error::from)?;
+        socket.read(buffer).map_err(Self::Error::to_nb)
     }
 
-    fn close(&mut self, _: TcpSocket) -> io::Result<()> {
+    fn close(&mut self, _: TcpSocket) -> Result<(), Self::Error> {
         // No-op: Socket gets closed when it is freed
         //
         // Could wrap it in an Option, but really that'll only make things messier; users will
@@ -95,7 +119,7 @@ impl TcpClientStack for crate::Stack {
 }
 
 impl TcpFullStack for crate::Stack {
-    fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Error> {
+    fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Self::Error> {
         let anyaddressthisport = net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
 
         let sock = TcpListener::bind(SocketAddr::from(anyaddressthisport))?;
@@ -106,15 +130,18 @@ impl TcpFullStack for crate::Stack {
         Ok(())
     }
 
-    fn listen(&mut self, _: &mut TcpSocket) -> Result<(), Error> {
+    fn listen(&mut self, _: &mut TcpSocket) -> Result<(), Self::Error> {
         // Seems to be implied in listener creation
         Ok(())
     }
 
-    fn accept(&mut self, socket: &mut TcpSocket) -> nb::Result<(TcpSocket, embedded_nal::SocketAddr), Self::Error> {
-        let sock = socket.state.get_bound()?;
+    fn accept(
+        &mut self,
+        socket: &mut TcpSocket,
+    ) -> nb::Result<(TcpSocket, embedded_nal::SocketAddr), Self::Error> {
+        let sock = socket.state.get_bound().map_err(Self::Error::from)?;
         sock.accept()
-            .map_err(to_nb)
+            .map_err(Self::Error::to_nb)
             .map(|(s, a)| (TcpSocket::connected(s), SocketAddr::from(a).into()))
     }
 }
@@ -132,11 +159,15 @@ impl embedded_nal_tcpextensions::TcpExactStack for crate::Stack {
         buffer: &mut [u8],
     ) -> nb::Result<(), Self::Error> {
         let socket = socket.state.get_running()?;
-        socket.read_exact(buffer).map_err(to_nb)
+        socket.read_exact(buffer).map_err(Self::Error::to_nb)
     }
 
-    fn send_all(&mut self, socket: &mut Self::TcpSocket, buffer: &[u8]) -> Result<(), nb::Error<Self::Error>> {
+    fn send_all(
+        &mut self,
+        socket: &mut Self::TcpSocket,
+        buffer: &[u8],
+    ) -> Result<(), nb::Error<Self::Error>> {
         let socket = socket.state.get_running()?;
-        socket.write_all(buffer).map_err(to_nb)
+        socket.write_all(buffer).map_err(Self::Error::to_nb)
     }
 }

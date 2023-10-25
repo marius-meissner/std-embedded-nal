@@ -11,7 +11,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
-embedded-nal = "0.6"
+embedded-nal = "0.7"
 embedded-nal-async = { version = "0.1", optional = true }
 async-std = { version = "1.12", optional = true }
 # If enabled, these traits are implemented as well; they're experimental and
