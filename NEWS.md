@@ -1,4 +1,9 @@
-# Unreleased
+# Changes in 0.2.0
+
+* embedded-nal dependency changed from 0.6 to 0.7.
+
+  This mainly changes details of the error types,
+  but is still a breaking change.
 
 * Support for async has been moved into its own crate;
   the experimental support in this crate introduced in 0.1.3 was removed.

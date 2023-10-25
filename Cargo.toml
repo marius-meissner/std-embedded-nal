@@ -1,6 +1,6 @@
 [package]
 name = "std-embedded-nal"
-version = "0.1.3"
+version = "0.2.0"
 authors = ["chrysn <chrysn@fsfe.org>"]
 edition = "2018"
 
