@@ -2,6 +2,8 @@ test:msrv:
   # Don't forget to update README when changing this!
   image: rust:1.53
   script:
+  # 1.5 changed to an edition the MSRV doesn't work any more
+  - cargo update -p 'byteorder' --precise '1.4.3'
   - cargo version && cargo build --examples && cargo test
 
 test:stable:
