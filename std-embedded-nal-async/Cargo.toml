@@ -1,0 +1,29 @@
+[package]
+name = "std-embedded-nal-async"
+version = "0.1.0"
+authors = ["chrysn <chrysn@fsfe.org>"]
+edition = "2021"
+
+description = "Implementation of the `embedded-nal-async` traits for large devices that support the standard library"
+categories = ["embedded", "hardware-support"]
+keywords = ["network"]
+license = "MIT OR Apache-2.0"
+repository = "https://gitlab.com/chrysn/std-embedded-nal"
+
+[dependencies]
+embedded-nal-async = "0.6"
+async-std = "1.12"
+# We're not using this directly, but when that crate's std feature is on, its
+# Error trait is also implemented for std::io::Error
+embedded-io-async = { version = "0.6", features = [ "std" ] }
+
+async-io = "^1.9"
+nix = { version = "0.25", features = [ "socket", "net", "uio" ] }
+
+[badges]
+gitlab = { repository = "chrysn/std-embedded-nal" }
+maintenance = { status = "experimental" }
+
+[[example]]
+name = "coapclient"
+required-features = [ "async-std/attributes" ]

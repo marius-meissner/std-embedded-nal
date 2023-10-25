@@ -1,3 +1,8 @@
+# Unreleased
+
+* Support for async has been moved into its own crate;
+  the experimental support in this crate introduced in 0.1.3 was removed.
+
 # Changes in 0.1.3
 
 * Add experimental support for embedded-nal-async

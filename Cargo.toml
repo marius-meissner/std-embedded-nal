@@ -12,15 +12,11 @@ repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
 embedded-nal = "0.7"
-embedded-nal-async = { version = "0.1", optional = true }
 async-std = { version = "1.12", optional = true }
 # If enabled, these traits are implemented as well; they're experimental and
 # will hopefully wind up in alter embedded-nal versions, so enabling this has
 # no stability guarantees.
 embedded-nal-tcpextensions = { version = "0.1", optional = true }
-
-[features]
-async = [ "embedded-nal-async", "async-std" ]
 
 [dev-dependencies]
 mio = { version = "0.8", features = [ "os-ext" ] }
@@ -28,7 +24,3 @@ mio = { version = "0.8", features = [ "os-ext" ] }
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }
 maintenance = { status = "experimental" }
-
-[[example]]
-name = "coapclient_async"
-required-features = [ "async", "async-std/attributes" ]
