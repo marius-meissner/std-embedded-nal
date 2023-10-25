@@ -11,15 +11,11 @@ license = "MIT OR Apache-2.0"
 repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
-embedded-nal-async = { git = "https://github.com/rust-embedded-community/embedded-nal" }
+embedded-nal-async = "0.6"
 async-std = "1.12"
-# If enabled, these traits are implemented as well; they're experimental and
-# will hopefully wind up in alter embedded-nal versions, so enabling this has
-# no stability guarantees.
-embedded-nal-tcpextensions = { version = "0.1", optional = true }
 # We're not using this directly, but when that crate's std feature is on, its
 # Error trait is also implemented for std::io::Error
-embedded-io = { version = "0.4", features = [ "std" ] }
+embedded-io-async = { version = "0.6", features = [ "std" ] }
 
 async-io = "^1.9"
 nix = { version = "0.25", features = [ "socket", "net", "uio" ] }
