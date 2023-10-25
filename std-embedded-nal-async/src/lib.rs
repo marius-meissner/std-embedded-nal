@@ -1,14 +1,17 @@
-//! This crate implements the [embedded-nal] network traits for operating systems that support the
-//! standard library's network.
+//! This crate implements the [embedded-nal-async] network traits for operating systems that
+//! support the standard library's network.
 //!
-//! UDP and TCP sockets are plainly wrapped and should behave unsuspiciously.
-//!
-//! The DNS implementation is slightly incomplete, as the Rust standard library contains no
-//! provisions to turn IP addresses back into hosts; that call thus fails unconditionally.
+//! As of now, only UDP sockets are implemented.
 //!
 //! All implementations use `std::io::Error` as their error type.
 //!
-//! [embedded-nal]: https://crates.io/crates/embedded-nal
+//! ## Caveats
+//!
+//! Currently, this crate uses unholy, unsafe and most likely unsound transmutations to get
+//! advanced features out of async-std. Until those are resolved, this crate is to be treated as
+//! even more care than version, maintenance status and license indicate.
+//!
+//! [embedded-nal-async]: https://crates.io/crates/embedded-nal-async
 // Needed because the traits we implement use it.
 #![feature(async_fn_in_trait)]
 
