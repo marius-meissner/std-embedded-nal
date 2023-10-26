@@ -82,13 +82,13 @@ impl embedded_nal_async::UdpStack for crate::Stack {
 
         if is_v4 {
             nix::sys::socket::setsockopt(
-                sock.as_raw_fd(),
+                &sock,
                 nix::sys::socket::sockopt::Ipv4PacketInfo,
                 &true
                 )?;
         } else {
             nix::sys::socket::setsockopt(
-                sock.as_raw_fd(),
+                &sock,
                 nix::sys::socket::sockopt::Ipv6RecvPacketInfo,
                 &true
                 )?;

@@ -19,7 +19,7 @@ async-std = "1.12"
 embedded-io-async = { version = "0.6", features = [ "std" ] }
 
 async-io = "^1.9"
-nix = { version = "0.25", features = [ "socket", "net", "uio" ] }
+nix = { version = "0.27.1", features = [ "socket", "net", "uio" ] }
 
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }
