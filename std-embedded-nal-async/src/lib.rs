@@ -12,8 +12,6 @@
 //! even more care than version, maintenance status and license indicate.
 //!
 //! [embedded-nal-async]: https://crates.io/crates/embedded-nal-async
-// Needed because the traits we implement use it.
-#![feature(async_fn_in_trait)]
 
 mod conversion;
 mod udp;
