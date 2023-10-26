@@ -5,12 +5,6 @@
 //!
 //! All implementations use `std::io::Error` as their error type.
 //!
-//! ## Caveats
-//!
-//! Currently, this crate uses unholy, unsafe and most likely unsound transmutations to get
-//! advanced features out of async-std. Until those are resolved, this crate is to be treated as
-//! even more care than version, maintenance status and license indicate.
-//!
 //! [embedded-nal-async]: https://crates.io/crates/embedded-nal-async
 
 mod conversion;
