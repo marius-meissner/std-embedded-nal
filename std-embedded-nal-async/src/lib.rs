@@ -1,7 +1,7 @@
 //! This crate implements the [embedded-nal-async] network traits for operating systems that
 //! support the standard library's network.
 //!
-//! As of now, only UDP sockets are implemented.
+//! As of now, only UDP sockets and DNS are implemented.
 //!
 //! All implementations use `std::io::Error` as their error type.
 //!
@@ -34,6 +34,7 @@
 
 mod conversion;
 mod udp;
+mod dns;
 
 /// The operating system's network stack, implementing ``embedded_nal_async::UdpStack``.
 ///
