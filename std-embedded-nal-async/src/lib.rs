@@ -1,21 +1,40 @@
 //! This crate implements the [embedded-nal-async] network traits for operating systems that
 //! support the standard library's network.
 //!
-//! As of now, only UDP sockets are implemented.
+//! As of now, only UDP sockets and DNS are implemented.
 //!
 //! All implementations use `std::io::Error` as their error type.
 //!
-//! ## Caveats
-//!
-//! Currently, this crate uses unholy, unsafe and most likely unsound transmutations to get
-//! advanced features out of async-std. Until those are resolved, this crate is to be treated as
-//! even more care than version, maintenance status and license indicate.
-//!
 //! [embedded-nal-async]: https://crates.io/crates/embedded-nal-async
-// Needed because the traits we implement use it.
-#![feature(async_fn_in_trait)]
+//!
+//! # Caveats
+//!
+//! ## Portability
+//!
+//! The current version uses the [nix] crate to get `IP_PKTINFO` / `IPV6_PKTINFO` from received
+//! packets as the UDP trait requires. This is only portable within POSIX systems, where the
+//! [`recvmsg` call](https://www.man7.org/linux/man-pages/man3/recvmsg.3p.html) is provided. The
+//! UniquelyBound version works without that restriction, but so far there has not been a need to
+//! run this on non-POSIX systems.
+//!
+//! ## UDP uniquely bound: excessive lengths
+//!
+//! Received messages whose length exceeds the provided buffer are not yet reported correctly for
+//! UDP's uniquely bound sockets. (They work as they shoudl for the multiply bound sockets, which
+//! depend on `recvmsg`, which allows detecting the overly long messages).
+//!
+//! ## Excessive lifetimes of receive buffers
+//!
+//! As required by the [embedded_nal_async] APIs, buffers are provided through exclusive references
+//! that are pinned for th eduration of the Future. The receive functions each have only one await
+//! point, so it would suffice if the buffers were provided just for the time of the poll calls on
+//! the future (as it would be done on `nb`); it has yet to be evaluated whether (in an application
+//! that uses up the buffers before it waits again) this makes an acutal difference when running on
+//! full link time optimization.
 
 mod conversion;
+mod dns;
+mod tcp;
 mod udp;
 
 /// The operating system's network stack, implementing ``embedded_nal_async::UdpStack``.

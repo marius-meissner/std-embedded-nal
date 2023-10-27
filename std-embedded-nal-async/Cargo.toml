@@ -3,6 +3,7 @@ name = "std-embedded-nal-async"
 version = "0.1.0"
 authors = ["chrysn <chrysn@fsfe.org>"]
 edition = "2021"
+rust-version = "1.75"
 
 description = "Implementation of the `embedded-nal-async` traits for large devices that support the standard library"
 categories = ["embedded", "hardware-support"]
@@ -18,7 +19,8 @@ async-std = "1.12"
 embedded-io-async = { version = "0.6", features = [ "std" ] }
 
 async-io = "^1.9"
-nix = { version = "0.25", features = [ "socket", "net", "uio" ] }
+nix = { version = "0.27.1", features = [ "socket", "net", "uio" ] }
+dns-lookup = "2.0.4"
 
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }
