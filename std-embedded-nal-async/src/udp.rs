@@ -1,15 +1,4 @@
 //! UDP implementation on the standard stack for embedded-nal-async
-//!
-//! This is an adjusted copy/paste from the [crate::udp] module.
-//!
-//! Futures may be implemeted with needless statefulness (they might have two inner .await points);
-//! the author is not sure whether that should be improved (would it make the future zero-sized),
-//! whether it can (as a rule of thumb, if it worked for nb it should support zero-sized futures)
-//! or whether it even makes a difference after an LTO pass.
-//!
-//! Known bugs:
-//! * Excessive lengths are not reported correctly except for the recvmsg version. This would be
-//!   fixed by using recvmsg more widely.
 
 use crate::conversion;
 use std::io::Error;
