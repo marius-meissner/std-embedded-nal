@@ -6,6 +6,14 @@
 //! All implementations use `std::io::Error` as their error type.
 //!
 //! [embedded-nal-async]: https://crates.io/crates/embedded-nal-async
+//!
+//! # Portability
+//!
+//! The current version uses the [nix] crate to get `IP_PKTINFO` / `IPV6_PKTINFO` from received
+//! packets as the UDP trait requires. This is only portable within POSIX systems, where the
+//! [`recvmsg` call](https://www.man7.org/linux/man-pages/man3/recvmsg.3p.html) is provided. The
+//! UniquelyBound version works without that restriction, but so far there has not been a need to
+//! run this on non-POSIX systems.
 
 mod conversion;
 mod udp;
