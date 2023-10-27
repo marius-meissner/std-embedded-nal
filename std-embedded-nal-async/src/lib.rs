@@ -33,8 +33,9 @@
 //! full link time optimization.
 
 mod conversion;
-mod udp;
 mod dns;
+mod tcp;
+mod udp;
 
 /// The operating system's network stack, implementing ``embedded_nal_async::UdpStack``.
 ///
