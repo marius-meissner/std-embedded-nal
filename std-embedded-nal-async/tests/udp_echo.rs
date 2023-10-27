@@ -1,4 +1,4 @@
-use embedded_nal_async::{UdpStack, ConnectedUdp, UnconnectedUdp, SocketAddr};
+use embedded_nal_async::{ConnectedUdp, SocketAddr, UdpStack, UnconnectedUdp};
 
 async fn echo(stack: &mut impl UdpStack, addr: &str) {
     let addr: SocketAddr = addr.parse().unwrap();
@@ -11,9 +11,15 @@ async fn echo(stack: &mut impl UdpStack, addr: &str) {
     let (received, servaddr, server_cliaddr) = servsock.receive_into(&mut buffer).await.unwrap();
     assert_eq!(received, 4);
     assert_eq!(&buffer[..4], b"ping");
-    assert_eq!(server_cliaddr, cli_local, "Client local and server remote address differ; NAT on loopback??");
+    assert_eq!(
+        server_cliaddr, cli_local,
+        "Client local and server remote address differ; NAT on loopback??"
+    );
 
-    servsock.send(servaddr, server_cliaddr, b"pong").await.unwrap();
+    servsock
+        .send(servaddr, server_cliaddr, b"pong")
+        .await
+        .unwrap();
     let mut buffer = [0u8; 10];
     let received = clisock.receive_into(&mut buffer).await.unwrap();
     assert_eq!(received, 4);

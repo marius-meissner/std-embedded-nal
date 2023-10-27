@@ -1,6 +1,6 @@
 //! A brutally oversimplified CoAP client that GETs /.well-known/core from localhost:5683
 
-use embedded_nal_async::{UdpStack, ConnectedUdp};
+use embedded_nal_async::{ConnectedUdp, UdpStack};
 
 async fn run<S, E>(stack: &mut S) -> Result<(), E>
 where
@@ -8,10 +8,7 @@ where
     S: UdpStack<Error = E>,
     S::Connected: ConnectedUdp<Error = E>,
 {
-    let target = embedded_nal_async::SocketAddr::new(
-        "::1".parse().unwrap(),
-        5683,
-    );
+    let target = embedded_nal_async::SocketAddr::new("::1".parse().unwrap(), 5683);
 
     let (_local, mut sock) = stack.connect(target).await?;
     // Data, V1 NON no token, GET, message ID 0x0000, 2x Uri-Path
@@ -30,5 +27,7 @@ where
 async fn main() {
     let mut stack = std_embedded_nal_async::Stack::default();
 
-    run(&mut stack).await.expect("Error running the main program");
+    run(&mut stack)
+        .await
+        .expect("Error running the main program");
 }

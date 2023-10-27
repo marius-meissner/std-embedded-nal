@@ -2,17 +2,26 @@
 //!
 //! This depends on a common setup of "localhost" names.
 
-use embedded_nal_async::{Dns, AddrType};
+use embedded_nal_async::{AddrType, Dns};
 
 #[test]
 fn resolve_localhost() {
     let stack = std_embedded_nal_async::Stack::default();
     async_std::task::block_on(async move {
-        let localhost_v4 = stack.get_host_by_name("localhost", AddrType::IPv4).await.unwrap();
+        let localhost_v4 = stack
+            .get_host_by_name("localhost", AddrType::IPv4)
+            .await
+            .unwrap();
         assert!(localhost_v4 == "127.0.0.1".parse::<embedded_nal_async::IpAddr>().unwrap());
-        let localhost_v6 = stack.get_host_by_name("localhost", AddrType::IPv6).await.unwrap();
+        let localhost_v6 = stack
+            .get_host_by_name("localhost", AddrType::IPv6)
+            .await
+            .unwrap();
         assert!(localhost_v6 == "::1".parse::<embedded_nal_async::IpAddr>().unwrap());
-        let localhost_any = stack.get_host_by_name("localhost", AddrType::Either).await.unwrap();
+        let localhost_any = stack
+            .get_host_by_name("localhost", AddrType::Either)
+            .await
+            .unwrap();
         assert!(localhost_any == "::1".parse::<embedded_nal_async::IpAddr>().unwrap());
     });
 }
@@ -21,7 +30,10 @@ fn resolve_localhost() {
 fn resolve_invalid() {
     let stack = std_embedded_nal_async::Stack::default();
     async_std::task::block_on(async move {
-        assert!(stack.get_host_by_name("example.invalid", AddrType::Either).await.is_err());
+        assert!(stack
+            .get_host_by_name("example.invalid", AddrType::Either)
+            .await
+            .is_err());
     });
 }
 
@@ -29,9 +41,15 @@ fn resolve_invalid() {
 fn reverse_localhost() {
     let stack = std_embedded_nal_async::Stack::default();
     async_std::task::block_on(async move {
-        let localhost_v4 = stack.get_host_by_address("127.0.0.1".parse().unwrap()).await.unwrap();
+        let localhost_v4 = stack
+            .get_host_by_address("127.0.0.1".parse().unwrap())
+            .await
+            .unwrap();
         assert!(localhost_v4 == "localhost");
-        let localhost_v6 = stack.get_host_by_address("::1".parse().unwrap()).await.unwrap();
+        let localhost_v6 = stack
+            .get_host_by_address("::1".parse().unwrap())
+            .await
+            .unwrap();
         assert!(localhost_v6 == "localhost");
     });
 }

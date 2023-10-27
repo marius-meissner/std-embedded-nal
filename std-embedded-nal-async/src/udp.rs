@@ -81,7 +81,11 @@ impl embedded_nal_async::UdpStack for crate::Stack {
         let plain_sock = sock.get_mut();
 
         if is_v4 {
-            nix::sys::socket::setsockopt(&plain_sock, nix::sys::socket::sockopt::Ipv4PacketInfo, &true)?;
+            nix::sys::socket::setsockopt(
+                &plain_sock,
+                nix::sys::socket::sockopt::Ipv4PacketInfo,
+                &true,
+            )?;
         } else {
             nix::sys::socket::setsockopt(
                 &plain_sock,

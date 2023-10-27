@@ -41,9 +41,7 @@ impl embedded_io_async::Read for TcpConnection {
     ) -> Result<(), embedded_io_async::ReadExactError<Error>> {
         use async_std::io::ReadExt;
         self.0.read_exact(buffer).await.map_err(|e| match e.kind() {
-            std::io::ErrorKind::UnexpectedEof => {
-                embedded_io_async::ReadExactError::UnexpectedEof
-            }
+            std::io::ErrorKind::UnexpectedEof => embedded_io_async::ReadExactError::UnexpectedEof,
             _ => embedded_io_async::ReadExactError::Other(e),
         })
     }
