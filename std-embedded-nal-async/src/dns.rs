@@ -1,7 +1,6 @@
 //! DNS implementation based on async_std
 
 use async_std::net::{SocketAddr, ToSocketAddrs};
-use embedded_nal_async::heapless::String;
 use embedded_nal_async::{AddrType, IpAddr};
 
 /// An std::io::Error compatible error type constructable when to_socket_addrs comes up empty
@@ -18,7 +17,7 @@ impl core::fmt::Display for NotFound {
 impl std::error::Error for NotFound {}
 
 /// An std::io::Error compatible error type expressing that a name doesn't fit in the
-/// [heapless::String] limits of the requested type
+/// provided response buffer.
 #[derive(Debug)]
 struct TooLong;
 
@@ -60,7 +59,11 @@ impl embedded_nal_async::Dns for crate::Stack {
         Err(Self::Error::new(std::io::ErrorKind::NotFound, NotFound))
     }
 
-    async fn get_host_by_address(&self, addr: IpAddr) -> Result<String<256>, Self::Error> {
+    async fn get_host_by_address(
+        &self,
+        addr: IpAddr,
+        result: &mut [u8],
+    ) -> Result<usize, Self::Error> {
         let fakesocketaddr =
             std::net::SocketAddr::new(crate::conversion::IpAddr::from(addr).into(), 1234);
 
@@ -74,13 +77,10 @@ impl embedded_nal_async::Dns for crate::Stack {
             return Err(Self::Error::new(std::io::ErrorKind::NotFound, NotFound));
         }
 
-        // For some reason, heapless::String has a From for &str not a TryFrom. Testing manually.
-        if name.len() <= 256 {
-            Ok(name.as_str().into())
+        if let Some(result) = result.get_mut(..name.len()) {
+            result.copy_from_slice(name.as_bytes());
+            Ok(result.len())
         } else {
-            // embedded_nal_async cites RFC1035 with "A fully qualified domain name (FQDN), has a
-            // maximum length of 255 bytes" -- still, let's not panic just because some system
-            // disagrees.
             Err(Self::Error::new(std::io::ErrorKind::OutOfMemory, TooLong))
         }
     }
