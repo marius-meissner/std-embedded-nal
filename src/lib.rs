@@ -27,7 +27,7 @@ mod udp;
 #[derive(Clone, Default)]
 pub struct Stack;
 
-#[deprecated(note="Use Stack::default() instead.")]
+#[deprecated(note = "Use Stack::default() instead.")]
 pub static STACK: Stack = Stack;
 
 /// An std::io::Error compatible error type returned when an operation is requested in the wrong

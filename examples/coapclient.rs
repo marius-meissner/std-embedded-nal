@@ -32,8 +32,7 @@ where
 
 /// Like run, but rather than doing the only thing possible with plain `nb` and block, use that our
 /// sockets have file descriptors and block at the OS level.
-fn run_with_unix(stack: &mut std_embedded_nal::Stack) -> Result<(), std::io::Error>
-{
+fn run_with_unix(stack: &mut std_embedded_nal::Stack) -> Result<(), std::io::Error> {
     let target = embedded_nal::SocketAddr::new(
         block!(stack.get_host_by_name("localhost", embedded_nal::AddrType::IPv6))?,
         5683,
@@ -42,12 +41,15 @@ fn run_with_unix(stack: &mut std_embedded_nal::Stack) -> Result<(), std::io::Err
     let mut sock = stack.socket()?;
     stack.connect(&mut sock, target)?;
 
-    let fd = sock.as_raw_fd().expect("Connected socket should already have an FD");
+    let fd = sock
+        .as_raw_fd()
+        .expect("Connected socket should already have an FD");
     let mut poll = mio::Poll::new()?;
     poll.registry().register(
-            &mut mio::unix::SourceFd(&fd),
-            mio::Token(0),
-            mio::Interest::READABLE)?;
+        &mut mio::unix::SourceFd(&fd),
+        mio::Token(0),
+        mio::Interest::READABLE,
+    )?;
     let mut events = mio::Events::with_capacity(1);
 
     // Data, V1 NON no token, GET, message ID 0x0000, 2x Uri-Path
@@ -59,7 +61,8 @@ fn run_with_unix(stack: &mut std_embedded_nal::Stack) -> Result<(), std::io::Err
     poll.poll(&mut events, None)?;
 
     let mut respbuf = [0; 1500];
-    let (resplen, _) = stack.receive(&mut sock, &mut respbuf)
+    let (resplen, _) = stack
+        .receive(&mut sock, &mut respbuf)
         .map_err(|e| match e {
             embedded_nal::nb::Error::Other(o) => o,
             embedded_nal::nb::Error::WouldBlock => unreachable!("Polling said this could be read."),
