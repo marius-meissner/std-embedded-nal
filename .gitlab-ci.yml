@@ -38,3 +38,10 @@ test:nightly:
   - cd std-embedded-nal-async/
   - cargo build --examples --all-features
   - cargo test --all-features
+
+fmt:
+  image: rustdocker/rust:nightly
+  script:
+  - cargo fmt --check
+  - cd std-embedded-nal-async/
+  - cargo fmt --check
