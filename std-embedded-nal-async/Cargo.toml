@@ -29,3 +29,6 @@ maintenance = { status = "experimental" }
 [[example]]
 name = "coapclient"
 required-features = [ "async-std/attributes" ]
+
+[workspace.metadata.release]
+sign-tag = true

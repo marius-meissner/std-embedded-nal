@@ -24,3 +24,6 @@ mio = { version = "0.8", features = [ "os-ext" ] }
 [badges]
 gitlab = { repository = "chrysn/std-embedded-nal" }
 maintenance = { status = "experimental" }
+
+[workspace.metadata.release]
+sign-tag = true
