@@ -11,10 +11,7 @@ impl embedded_nal_async::TcpConnect for crate::Stack {
     async fn connect<'a>(
         &'a self,
         addr: embedded_nal_async::SocketAddr,
-    ) -> Result<Self::Connection<'a>, Error>
-    where
-        Self: 'a,
-    {
+    ) -> Result<Self::Connection<'a>, Error> {
         async_std::net::TcpStream::connect(async_std::net::SocketAddr::from(
             conversion::SocketAddr::from(addr),
         ))

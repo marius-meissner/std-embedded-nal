@@ -5,7 +5,7 @@ fn start_server(addr: &str) -> std::net::TcpListener {
     std::net::TcpListener::bind(addr).unwrap()
 }
 
-fn run_server(mut servsock: std::net::TcpListener) {
+fn run_server(servsock: std::net::TcpListener) {
     use std::io::{Read, Write};
 
     let mut servsock = servsock.incoming().next().unwrap().unwrap();

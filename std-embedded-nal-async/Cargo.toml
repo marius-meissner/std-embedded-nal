@@ -1,6 +1,6 @@
 [package]
 name = "std-embedded-nal-async"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["chrysn <chrysn@fsfe.org>"]
 edition = "2021"
 rust-version = "1.75"
@@ -12,7 +12,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
-embedded-nal-async = "0.6"
+embedded-nal-async = "0.7"
 async-std = "1.12"
 # We're not using this directly, but when that crate's std feature is on, its
 # Error trait is also implemented for std::io::Error

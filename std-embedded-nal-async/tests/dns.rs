@@ -41,16 +41,21 @@ fn resolve_invalid() {
 fn reverse_localhost() {
     let stack = std_embedded_nal_async::Stack::default();
     async_std::task::block_on(async move {
-        let localhost_v4 = stack
-            .get_host_by_address("127.0.0.1".parse().unwrap())
+        let mut localhost_v4 = [0; 128];
+        let len = stack
+            .get_host_by_address("127.0.0.1".parse().unwrap(), &mut localhost_v4)
             .await
             .unwrap();
-        assert!(localhost_v4 == "localhost");
-        let localhost_v6 = stack
-            .get_host_by_address("::1".parse().unwrap())
+        let localhost_v4 = &localhost_v4[..len];
+        assert!(localhost_v4 == b"localhost");
+
+        let mut localhost_v6 = [0; 128];
+        let len = stack
+            .get_host_by_address("::1".parse().unwrap(), &mut localhost_v6)
             .await
             .unwrap();
-        assert!(localhost_v6 == "localhost");
+        let localhost_v6 = &localhost_v6[..len];
+        assert!(localhost_v6 == b"localhost");
     });
 }
 
@@ -59,6 +64,7 @@ fn reverse_invalid() {
     let stack = std_embedded_nal_async::Stack::default();
     async_std::task::block_on(async move {
         let broadcast = "255.255.255.255".parse().unwrap();
-        assert!(dbg!(stack.get_host_by_address(broadcast).await).is_err());
+        let mut buf = [0; 128];
+        assert!(dbg!(stack.get_host_by_address(broadcast, &mut buf).await).is_err());
     });
 }
