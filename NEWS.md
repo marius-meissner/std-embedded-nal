@@ -1,3 +1,11 @@
+# Unreleased
+
+* embedded-nal dependency changed from 0.7 to 0.8.
+* Bump MSRV to 1.60.0 du to the update of embedded-nal.
+* Switch to Edition 2021
+* Change `get_host_by_address` of `Dns` implemenation to reflect the change in embedded-nal.
+  (Dependency to heapless has been removed)
+
 # Changes in 0.2.0
 
 * embedded-nal dependency changed from 0.6 to 0.7.

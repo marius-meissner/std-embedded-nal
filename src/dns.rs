@@ -1,4 +1,4 @@
-use embedded_nal::{heapless::String, nb, AddrType, Dns, IpAddr};
+use embedded_nal::{nb, AddrType, Dns, IpAddr};
 use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::io::{Error, ErrorKind};
@@ -49,7 +49,7 @@ impl Dns for crate::Stack {
         Err(nb::Error::Other(Error::new(ErrorKind::NotFound, NotFound)))
     }
 
-    fn get_host_by_address(&mut self, _addr: IpAddr) -> Result<String<256>, nb::Error<Error>> {
-        Err(nb::Error::Other(Error::new(ErrorKind::NotFound, NotFound)))
+    fn get_host_by_address(&self, _addr: IpAddr, _result: &mut [u8]) -> Result<usize, Self::Error> {
+        Err(Error::new(ErrorKind::NotFound, NotFound))
     }
 }

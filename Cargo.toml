@@ -2,7 +2,7 @@
 name = "std-embedded-nal"
 version = "0.2.0"
 authors = ["chrysn <chrysn@fsfe.org>"]
-edition = "2018"
+edition = "2021"
 
 description = "Implementation of the `embedded-nal` traits for large devices that support the standard library"
 categories = ["embedded", "hardware-support"]
@@ -11,7 +11,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://gitlab.com/chrysn/std-embedded-nal"
 
 [dependencies]
-embedded-nal = "0.7"
+embedded-nal = "0.8"
 async-std = { version = "1.12", optional = true }
 # If enabled, these traits are implemented as well; they're experimental and
 # will hopefully wind up in alter embedded-nal versions, so enabling this has
