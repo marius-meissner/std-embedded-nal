@@ -1,4 +1,4 @@
-# Unreleased
+# Changes in 0.3.0
 
 * embedded-nal dependency changed from 0.7 to 0.8.
 * Bump MSRV to 1.60.0 du to the update of embedded-nal.
