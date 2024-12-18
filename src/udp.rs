@@ -1,9 +1,9 @@
-use crate::conversion::{to_nb, SocketAddr};
+use crate::conversion::to_nb;
 use crate::SocketState;
 use embedded_nal::nb;
 use embedded_nal::{UdpClientStack, UdpFullStack};
 use std::io::{self, Error};
-use std::net::{self, IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{self, IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 pub struct UdpSocket {
     state: SocketState<net::UdpSocket, net::UdpSocket>,
@@ -43,25 +43,17 @@ impl UdpClientStack for crate::Stack {
         Ok(UdpSocket::new())
     }
 
-    fn connect(
-        &mut self,
-        socket: &mut Self::UdpSocket,
-        remote: embedded_nal::SocketAddr,
-    ) -> std::io::Result<()> {
+    fn connect(&mut self, socket: &mut Self::UdpSocket, remote: SocketAddr) -> std::io::Result<()> {
         let any = match remote {
-            embedded_nal::SocketAddr::V4(_) => {
-                net::SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)
-            }
-            embedded_nal::SocketAddr::V6(_) => {
-                net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
-            }
+            SocketAddr::V4(_) => SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0),
+            SocketAddr::V6(_) => SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0),
         };
 
         let sock = net::UdpSocket::bind(any)?;
 
         sock.set_nonblocking(true)?;
 
-        sock.connect(SocketAddr::from(remote))?;
+        sock.connect(remote)?;
         socket.state = SocketState::Connected(sock);
         Ok(())
     }
@@ -75,11 +67,9 @@ impl UdpClientStack for crate::Stack {
         &mut self,
         socket: &mut Self::UdpSocket,
         buffer: &mut [u8],
-    ) -> nb::Result<(usize, embedded_nal::SocketAddr), Self::Error> {
+    ) -> nb::Result<(usize, SocketAddr), Self::Error> {
         let sock = socket.state.get_any_mut()?;
-        sock.recv_from(buffer)
-            .map(|(length, peer_addr)| (length, SocketAddr::from(peer_addr).into()))
-            .map_err(to_nb)
+        sock.recv_from(buffer).map_err(to_nb)
     }
 
     fn close(&mut self, _: Self::UdpSocket) -> io::Result<()> {
@@ -106,12 +96,10 @@ impl UdpFullStack for crate::Stack {
     fn send_to(
         &mut self,
         socket: &mut UdpSocket,
-        remote: embedded_nal::SocketAddr,
+        remote: SocketAddr,
         buffer: &[u8],
     ) -> Result<(), nb::Error<Error>> {
         let sock = socket.state.get_bound()?;
-        sock.send_to(buffer, SocketAddr::from(remote))
-            .map(drop)
-            .map_err(to_nb)
+        sock.send_to(buffer, remote).map(drop).map_err(to_nb)
     }
 }

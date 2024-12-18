@@ -1,5 +1,5 @@
 use embedded_nal::nb::block;
-use embedded_nal::SocketAddr;
+use std::net::SocketAddr;
 
 const PORT: u16 = 9876;
 

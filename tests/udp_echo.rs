@@ -1,7 +1,8 @@
 use embedded_nal::nb::block;
+use std::net::SocketAddr;
 
 fn echo(stack: &mut impl embedded_nal::UdpFullStack, addr: &str) {
-    let addr: embedded_nal::SocketAddr = addr.parse().unwrap();
+    let addr: SocketAddr = addr.parse().unwrap();
     let mut servsock = stack.socket().unwrap();
     let mut clisock = stack.socket().unwrap();
 

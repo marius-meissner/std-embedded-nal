@@ -1,8 +1,8 @@
-use embedded_nal::{nb, AddrType, Dns, IpAddr};
+use embedded_nal::{nb, AddrType, Dns};
 use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::io::{Error, ErrorKind};
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 
 /// An std::io::Error compatible error type constructable when to_socket_addrs comes up empty
 /// (because it does not produce an error of its own)
@@ -49,7 +49,11 @@ impl Dns for crate::Stack {
         Err(nb::Error::Other(Error::new(ErrorKind::NotFound, NotFound)))
     }
 
-    fn get_host_by_address(&self, _addr: IpAddr, _result: &mut [u8]) -> Result<usize, Self::Error> {
-        Err(Error::new(ErrorKind::NotFound, NotFound))
+    fn get_host_by_address(
+        &mut self,
+        _addr: IpAddr,
+        _result: &mut [u8],
+    ) -> nb::Result<usize, Self::Error> {
+        nb::Result::Err(nb::Error::Other(Error::new(ErrorKind::NotFound, NotFound)))
     }
 }
