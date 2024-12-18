@@ -1,5 +1,5 @@
 [package]
-name = "std-embedded-nal"
+name = "mm-std-embedded-nal"
 version = "0.4.0"
 authors = ["chrysn <chrysn@fsfe.org>"]
 edition = "2021"
