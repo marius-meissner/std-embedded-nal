@@ -2,6 +2,7 @@
 
 use embedded_nal::nb::block;
 use embedded_nal::{Dns, TcpClientStack};
+use std::net::SocketAddr;
 
 fn run<S, E, DnsError>(stack: &mut S) -> Result<(), E>
 where
@@ -9,7 +10,7 @@ where
     DnsError: core::fmt::Debug,
     S: TcpClientStack<Error = E> + Dns<Error = DnsError>,
 {
-    let target = embedded_nal::SocketAddr::new(
+    let target = SocketAddr::new(
         block!(stack.get_host_by_name("localhost", embedded_nal::AddrType::IPv6)).unwrap(),
         80,
     );

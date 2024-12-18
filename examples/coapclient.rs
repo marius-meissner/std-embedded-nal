@@ -5,13 +5,14 @@
 
 use embedded_nal::nb::block;
 use embedded_nal::{Dns, UdpClientStack};
+use std::net::SocketAddr;
 
-fn run<S, E>(stack: &mut S) -> Result<(), E>
+pub fn run<S, E>(stack: &mut S) -> Result<(), E>
 where
     E: core::fmt::Debug, // Might go away when MSRV goes up to 1.49, see https://github.com/rust-lang/rust/issues/80821
     S: UdpClientStack<Error = E> + Dns<Error = E>,
 {
-    let target = embedded_nal::SocketAddr::new(
+    let target = SocketAddr::new(
         block!(stack.get_host_by_name("localhost", embedded_nal::AddrType::IPv6))?,
         5683,
     );
@@ -33,7 +34,7 @@ where
 /// Like run, but rather than doing the only thing possible with plain `nb` and block, use that our
 /// sockets have file descriptors and block at the OS level.
 fn run_with_unix(stack: &mut std_embedded_nal::Stack) -> Result<(), std::io::Error> {
-    let target = embedded_nal::SocketAddr::new(
+    let target = SocketAddr::new(
         block!(stack.get_host_by_name("localhost", embedded_nal::AddrType::IPv6))?,
         5683,
     );

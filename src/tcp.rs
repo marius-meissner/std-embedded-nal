@@ -1,9 +1,8 @@
-use crate::conversion::SocketAddr;
 use crate::SocketState;
 use embedded_nal::nb;
 use embedded_nal::{TcpClientStack, TcpFullStack};
 use std::io::{Error, Read, Write};
-use std::net::{self, IpAddr, Ipv6Addr, TcpListener, TcpStream};
+use std::net::{self, IpAddr, Ipv6Addr, SocketAddr, TcpListener, TcpStream};
 
 #[derive(Debug)]
 pub struct TcpError(pub Error);
@@ -84,9 +83,9 @@ impl TcpClientStack for crate::Stack {
     fn connect(
         &mut self,
         socket: &mut TcpSocket,
-        remote: embedded_nal::SocketAddr,
+        remote: SocketAddr,
     ) -> nb::Result<(), Self::Error> {
-        let soc = TcpStream::connect(SocketAddr::from(remote)).map_err(Self::Error::from)?;
+        let soc = TcpStream::connect(remote).map_err(Self::Error::from)?;
 
         soc.set_nonblocking(true).map_err(Self::Error::from)?;
 
@@ -122,7 +121,7 @@ impl TcpFullStack for crate::Stack {
     fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Self::Error> {
         let anyaddressthisport = net::SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), port);
 
-        let sock = TcpListener::bind(SocketAddr::from(anyaddressthisport))?;
+        let sock = TcpListener::bind(anyaddressthisport)?;
 
         sock.set_nonblocking(true)?;
 
@@ -138,36 +137,10 @@ impl TcpFullStack for crate::Stack {
     fn accept(
         &mut self,
         socket: &mut TcpSocket,
-    ) -> nb::Result<(TcpSocket, embedded_nal::SocketAddr), Self::Error> {
+    ) -> nb::Result<(TcpSocket, SocketAddr), Self::Error> {
         let sock = socket.state.get_bound().map_err(Self::Error::from)?;
         sock.accept()
             .map_err(Self::Error::to_nb)
-            .map(|(s, a)| (TcpSocket::connected(s), SocketAddr::from(a).into()))
-    }
-}
-
-#[cfg(feature = "embedded-nal-tcpextensions")]
-impl embedded_nal_tcpextensions::TcpExactStack for crate::Stack {
-    // Arbitrary, but a) the std stack could allocate arbitrarily anyway, and b) this doesn't
-    // read into the output buffer incompletely (which is what'd make buffering tricky)
-    const RECVBUFLEN: usize = 4 * 1024 * 1024;
-    const SENDBUFLEN: usize = 4 * 1024 * 1024;
-
-    fn receive_exact(
-        &mut self,
-        socket: &mut Self::TcpSocket,
-        buffer: &mut [u8],
-    ) -> nb::Result<(), Self::Error> {
-        let socket = socket.state.get_running()?;
-        socket.read_exact(buffer).map_err(Self::Error::to_nb)
-    }
-
-    fn send_all(
-        &mut self,
-        socket: &mut Self::TcpSocket,
-        buffer: &[u8],
-    ) -> Result<(), nb::Error<Self::Error>> {
-        let socket = socket.state.get_running()?;
-        socket.write_all(buffer).map_err(Self::Error::to_nb)
+            .map(|(s, a)| (TcpSocket::connected(s), a))
     }
 }
